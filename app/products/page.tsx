@@ -47,6 +47,13 @@ import dayjs from 'dayjs';
 import { DynamicSearch, FieldConfig, SavedSearch, ViewMode, ReportFormat, ReportOption } from '@/components/DynamicSearch';
 import { useGridManagement } from '@/hooks/useGridManagement';
 import { useProducts, useAllProducts, usePrefetchProduct, type ProductsQueryParams } from '@/hooks/useProducts';
+import {
+  useSavedSearches,
+  useCreateSavedSearch,
+  useRenameSavedSearch,
+  useChangeSearchVisibility,
+  useDeleteSavedSearch,
+} from '@/hooks/useSavedSearches';
 
 // Search field configurations - similar to app/page.tsx
 const searchFields: FieldConfig[] = [
@@ -189,8 +196,16 @@ export default function ProductsPage() {
     scrollContainerRef,
   });
 
-  // Local UI state
-  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
+  // Saved searches from .NET API
+  const { data: savedSearches = [], isLoading: isSavedSearchesLoading } = useSavedSearches({
+    context: 'products',
+    includeGlobal: true,
+  });
+  const createSavedSearchMutation = useCreateSavedSearch();
+  const renameSavedSearchMutation = useRenameSavedSearch();
+  const changeVisibilityMutation = useChangeSearchVisibility();
+  const deleteSavedSearchMutation = useDeleteSavedSearch();
+
   // Use hasSearched from persisted grid state
   const hasSearched = state.hasSearched;
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -451,10 +466,23 @@ export default function ProductsPage() {
     setViewDialogOpen(true);
   };
 
-  // Saved search handlers
+  // Saved search handlers - using .NET API via React Query mutations
   const handleSaveSearch = (search: SavedSearch) => {
-    setSavedSearches((prev) => [...prev, search]);
-    console.log('Saved Search:', search);
+    createSavedSearchMutation.mutate({
+      name: search.name,
+      description: search.description,
+      context: 'products',
+      visibility: search.visibility,
+      params: search.params,
+    }, {
+      onSuccess: () => {
+        console.log('Saved Search:', search.name);
+      },
+      onError: (error) => {
+        console.error('Failed to save search:', error);
+        alert('Failed to save search. Please try again.');
+      },
+    });
   };
 
   const handleLoadSearch = (searchId: string) => {
@@ -463,22 +491,39 @@ export default function ProductsPage() {
   };
 
   const handleDeleteSearch = (searchId: string) => {
-    setSavedSearches((prev) => prev.filter((s) => s.id !== searchId));
-    console.log('Deleted Search ID:', searchId);
+    deleteSavedSearchMutation.mutate(searchId, {
+      onSuccess: () => {
+        console.log('Deleted Search ID:', searchId);
+      },
+      onError: (error) => {
+        console.error('Failed to delete search:', error);
+        alert('Failed to delete search. Please try again.');
+      },
+    });
   };
 
   const handleRenameSearch = (searchId: string, newName: string) => {
-    setSavedSearches((prev) =>
-      prev.map((s) => (s.id === searchId ? { ...s, name: newName } : s))
-    );
-    console.log('Renamed Search ID:', searchId, 'to:', newName);
+    renameSavedSearchMutation.mutate({ id: searchId, name: newName }, {
+      onSuccess: () => {
+        console.log('Renamed Search ID:', searchId, 'to:', newName);
+      },
+      onError: (error) => {
+        console.error('Failed to rename search:', error);
+        alert('Failed to rename search. Please try again.');
+      },
+    });
   };
 
   const handleChangeVisibility = (searchId: string, visibility: 'user' | 'global') => {
-    setSavedSearches((prev) =>
-      prev.map((s) => (s.id === searchId ? { ...s, visibility } : s))
-    );
-    console.log('Changed Search ID:', searchId, 'visibility to:', visibility);
+    changeVisibilityMutation.mutate({ id: searchId, visibility }, {
+      onSuccess: () => {
+        console.log('Changed Search ID:', searchId, 'visibility to:', visibility);
+      },
+      onError: (error) => {
+        console.error('Failed to change visibility:', error);
+        alert('Failed to change visibility. Please try again.');
+      },
+    });
   };
 
   // Handle export/download for the current report type
