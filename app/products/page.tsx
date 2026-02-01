@@ -54,6 +54,10 @@ import {
   useChangeSearchVisibility,
   useDeleteSavedSearch,
 } from '@/hooks/useSavedSearches';
+import {
+  useResponsiveColumnVisibility,
+  type ResponsiveColumnConfig,
+} from '@/hooks/useResponsiveColumnVisibility';
 
 // Search field configurations - similar to app/page.tsx
 const searchFields: FieldConfig[] = [
@@ -329,6 +333,20 @@ export default function ProductsPage() {
     },
   ];
 
+  // Responsive column configuration
+  // hideBelow: 'md' means the column will be hidden on xs and sm screens
+  // hideBelow: 'lg' means the column will be hidden on xs, sm, and md screens
+  const responsiveColumnConfig: ResponsiveColumnConfig[] = [
+    { field: 'id', hideBelow: 'md' },           // Hide ID on small screens
+    { field: 'name' },                           // Always visible (primary column)
+    { field: 'category', hideBelow: 'sm' },      // Hide on xs
+    { field: 'status' },                         // Always visible (important)
+    { field: 'price', hideBelow: 'sm' },         // Hide on xs
+    { field: 'stock', hideBelow: 'md' },         // Hide on xs, sm
+    { field: 'createdAt', hideBelow: 'lg' },     // Hide on xs, sm, md
+    { field: 'actions' },                        // Always visible
+  ];
+
   // Handle edit with lock acquisition
   const handleEditClick = async (row: any) => {
     // Check if row is locked by another user
@@ -423,6 +441,18 @@ export default function ProductsPage() {
         },
       ]
     : baseColumns;
+
+  // Responsive column visibility - merges responsive rules with user preferences
+  const {
+    columnVisibilityModel,
+    setColumnsVisible,
+  } = useResponsiveColumnVisibility({
+    columns,
+    responsiveConfig: responsiveColumnConfig,
+    userVisibility: state.columnVisibility,
+    onUserVisibilityChange: setColumnVisibility,
+    userPreferencesPriority: true, // User can override responsive hiding
+  });
 
   // Column config for report view
   const availableColumns = useMemo(
@@ -925,8 +955,8 @@ export default function ProductsPage() {
         sortingMode="server"
         checkboxSelection
         onRowSelectionModelChange={handleRowSelectionChange}
-        columnVisibilityModel={state.columnVisibility}
-        onColumnVisibilityModelChange={setColumnVisibility}
+        columnVisibilityModel={columnVisibilityModel}
+        onColumnVisibilityModelChange={(model) => setColumnsVisible(model)}
         slots={{
           loadingOverlay: () => (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
