@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useGridNavigationStore, GridState } from '@/stores/gridNavigationStore';
+import { useGridNavigationStore, GridState, getDefaultGridState } from '@/stores/gridNavigationStore';
 
 interface UseGridManagementOptions {
   gridId: string;
@@ -54,14 +54,16 @@ export function useGridManagement({
   const rafRef = useRef<number | null>(null);
   const lastScrollPosition = useRef<{ top: number; left: number }>({ top: 0, left: 0 });
 
+  // Subscribe to the specific grid's state via selector for proper reactivity
+  const state = useGridNavigationStore(
+    (s) => s.activeGridState[gridId]
+  ) ?? getDefaultGridState();
+
   const {
-    getGridState,
     updateGridState,
     pushNavigation,
     popNavigation,
   } = useGridNavigationStore();
-
-  const state = getGridState(gridId);
 
   // Debounced state update to avoid excessive writes
   const debouncedUpdateState = useCallback(
@@ -82,7 +84,7 @@ export function useGridManagement({
   // Update a single filter (resets page to 0)
   const updateFilter = useCallback(
     (key: string, value: any) => {
-      const currentFilters = getGridState(gridId).filters;
+      const currentFilters = useGridNavigationStore.getState().activeGridState[gridId]?.filters ?? {};
       const newFilters = { ...currentFilters };
 
       if (value === undefined || value === null || value === '' ||
@@ -94,7 +96,7 @@ export function useGridManagement({
 
       updateGridState(gridId, { filters: newFilters, page: 0 });
     },
-    [gridId, getGridState, updateGridState]
+    [gridId, updateGridState]
   );
 
   // Clear all filters
@@ -105,12 +107,12 @@ export function useGridManagement({
   // Clear a specific filter
   const clearFilter = useCallback(
     (key: string) => {
-      const currentFilters = getGridState(gridId).filters;
+      const currentFilters = useGridNavigationStore.getState().activeGridState[gridId]?.filters ?? {};
       const newFilters = { ...currentFilters };
       delete newFilters[key];
       updateGridState(gridId, { filters: newFilters, page: 0 });
     },
-    [gridId, getGridState, updateGridState]
+    [gridId, updateGridState]
   );
 
   // Navigate to edit page while preserving state

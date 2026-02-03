@@ -35,6 +35,7 @@ export function useProducts(
     queryKey: productKeys.list(params),
     queryFn: () => fetchProducts(params),
     placeholderData: keepPreviousData, // Keep showing previous data while loading new page
+    structuralSharing: false, // Ensure new data references on each fetch
     staleTime: 1 * 60 * 1000, // 1 minute
     enabled: options?.enabled ?? true,
   });

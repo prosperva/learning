@@ -40,7 +40,7 @@ interface GridNavigationState {
 }
 
 // Default grid state
-const getDefaultGridState = (): GridState => ({
+export const getDefaultGridState = (): GridState => ({
   filters: {},
   page: 0,
   pageSize: 25,

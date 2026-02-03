@@ -190,8 +190,6 @@ export default function ProductsPage() {
     state,
     updateState,
     navigateTo,
-    setPage,
-    setPageSize,
     setSortModel,
     setColumnVisibility,
     setSelectedRows,
@@ -221,10 +219,15 @@ export default function ProductsPage() {
   // Track locked rows: { rowId: { lockedBy: string, lockedAt: Date } }
   const [lockedRows, setLockedRows] = useState<Record<number, { lockedBy: string; lockedAt: Date }>>({});
 
-  // Build query params from grid state
-  const queryParams: ProductsQueryParams = useMemo(() => ({
-    page: state.page,
-    pageSize: state.pageSize,
+  // Local pagination state - drives queries directly (React state guarantees re-render)
+  // Initialized from persisted Zustand state, synced back on change
+  const [page, setLocalPage] = useState(state.page);
+  const [pageSize, setLocalPageSize] = useState(state.pageSize);
+
+  // Build query params from local pagination state + Zustand filters
+  const queryParams: ProductsQueryParams = {
+    page,
+    pageSize,
     sortField: state.sortModel[0]?.field,
     sortOrder: state.sortModel[0]?.sort,
     search: state.filters.search,
@@ -233,7 +236,7 @@ export default function ProductsPage() {
     priceRange: state.filters.priceRange,
     dateFrom: state.filters.dateFrom,
     dateTo: state.filters.dateTo,
-  }), [state.page, state.pageSize, state.sortModel, state.filters]);
+  };
 
   // Build filter-only params for report view (no pagination)
   const reportQueryParams = useMemo(() => ({
@@ -474,7 +477,8 @@ export default function ProductsPage() {
     console.log('Search Parameters:', params);
     console.log('Selected View Mode:', selectedViewMode);
 
-    // Update filters in grid state, reset to page 0, and mark as searched
+    // Reset local pagination + update Zustand
+    setLocalPage(0);
     updateState({
       filters: params,
       page: 0,
@@ -483,7 +487,8 @@ export default function ProductsPage() {
   };
 
   const handleReset = () => {
-    // Clear filters and reset hasSearched flag
+    // Reset local pagination + clear Zustand
+    setLocalPage(0);
     updateState({
       filters: {},
       page: 0,
@@ -912,15 +917,11 @@ export default function ProductsPage() {
     }
   };
 
-  // Pagination handlers
+  // Pagination handlers - update local state (drives query) + sync to Zustand (persistence)
   const handlePaginationChange = (model: GridPaginationModel) => {
-    // Only update page if it changed (don't call setPageSize unnecessarily
-    // since setPageSize resets page to 0)
-    if (model.pageSize !== state.pageSize) {
-      setPageSize(model.pageSize);
-    } else if (model.page !== state.page) {
-      setPage(model.page);
-    }
+    setLocalPage(model.page);
+    setLocalPageSize(model.pageSize);
+    updateState({ page: model.page, pageSize: model.pageSize });
   };
 
   const handleSortChange = (model: GridSortModel) => {
@@ -947,7 +948,7 @@ export default function ProductsPage() {
         loading={isLoading || isFetching}
         getRowId={(row) => row.id}
         pageSizeOptions={[10, 25, 50, 100]}
-        paginationModel={{ page: state.page, pageSize: state.pageSize }}
+        paginationModel={{ page, pageSize }}
         onPaginationModelChange={handlePaginationChange}
         paginationMode="server"
         sortModel={state.sortModel}
