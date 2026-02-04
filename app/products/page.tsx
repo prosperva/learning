@@ -57,7 +57,11 @@ import {
 import {
   useResponsiveColumnVisibility,
   type ResponsiveColumnConfig,
+  type Breakpoint,
 } from '@/hooks/useResponsiveColumnVisibility';
+
+// Extend GridColDef with responsive config
+type ResponsiveGridColDef = GridColDef & { hideBelow?: Breakpoint };
 
 // Search field configurations - similar to app/page.tsx
 const searchFields: FieldConfig[] = [
@@ -293,10 +297,10 @@ export default function ProductsPage() {
   }, []);
 
   // Grid columns definition
-  const baseColumns: GridColDef[] = [
-    { field: 'id', headerName: 'ID', width: 70 },
+  const baseColumns: ResponsiveGridColDef[] = [
+    { field: 'id', headerName: 'ID', width: 70, hideBelow: 'md' },
     { field: 'name', headerName: 'Product Name', width: 200, flex: 1 },
-    { field: 'category', headerName: 'Category', width: 130 },
+    { field: 'category', headerName: 'Category', width: 130, hideBelow: 'sm' },
     {
       field: 'status',
       headerName: 'Status',
@@ -320,29 +324,23 @@ export default function ProductsPage() {
       headerName: 'Price ($)',
       width: 100,
       type: 'number',
+      hideBelow: 'sm',
       valueFormatter: (value: number) => `$${value?.toFixed(2) || '0.00'}`,
     },
-    { field: 'stock', headerName: 'Stock', width: 100, type: 'number' },
+    { field: 'stock', headerName: 'Stock', width: 100, type: 'number', hideBelow: 'md' },
     {
       field: 'createdAt',
       headerName: 'Created',
       width: 120,
+      hideBelow: 'lg',
       valueFormatter: (value: string) => dayjs(value).format('MM/DD/YYYY'),
     },
   ];
 
-  // Responsive column configuration
-  // hideBelow: 'md' means the column will be hidden on xs and sm screens
-  // hideBelow: 'lg' means the column will be hidden on xs, sm, and md screens
+  // Derive responsive config from baseColumns + actions (always visible)
   const responsiveColumnConfig: ResponsiveColumnConfig[] = [
-    { field: 'id', hideBelow: 'md' },           // Hide ID on small screens
-    { field: 'name' },                           // Always visible (primary column)
-    { field: 'category', hideBelow: 'sm' },      // Hide on xs
-    { field: 'status' },                         // Always visible (important)
-    { field: 'price', hideBelow: 'sm' },         // Hide on xs
-    { field: 'stock', hideBelow: 'md' },         // Hide on xs, sm
-    { field: 'createdAt', hideBelow: 'lg' },     // Hide on xs, sm, md
-    { field: 'actions' },                        // Always visible
+    ...baseColumns.map(({ field, hideBelow }) => ({ field, hideBelow })),
+    { field: 'actions' },
   ];
 
   // Handle edit with lock acquisition
