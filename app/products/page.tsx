@@ -219,15 +219,10 @@ export default function ProductsPage() {
   // Track locked rows: { rowId: { lockedBy: string, lockedAt: Date } }
   const [lockedRows, setLockedRows] = useState<Record<number, { lockedBy: string; lockedAt: Date }>>({});
 
-  // Local pagination state - drives queries directly (React state guarantees re-render)
-  // Initialized from persisted Zustand state, synced back on change
-  const [page, setLocalPage] = useState(state.page);
-  const [pageSize, setLocalPageSize] = useState(state.pageSize);
-
-  // Build query params from local pagination state + Zustand filters
+  // Build query params directly from Zustand state (single source of truth)
   const queryParams: ProductsQueryParams = {
-    page,
-    pageSize,
+    page: state.page,
+    pageSize: state.pageSize,
     sortField: state.sortModel[0]?.field,
     sortOrder: state.sortModel[0]?.sort,
     search: state.filters.search,
@@ -477,8 +472,6 @@ export default function ProductsPage() {
     console.log('Search Parameters:', params);
     console.log('Selected View Mode:', selectedViewMode);
 
-    // Reset local pagination + update Zustand
-    setLocalPage(0);
     updateState({
       filters: params,
       page: 0,
@@ -487,8 +480,6 @@ export default function ProductsPage() {
   };
 
   const handleReset = () => {
-    // Reset local pagination + clear Zustand
-    setLocalPage(0);
     updateState({
       filters: {},
       page: 0,
@@ -917,10 +908,9 @@ export default function ProductsPage() {
     }
   };
 
-  // Pagination handlers - update local state (drives query) + sync to Zustand (persistence)
+  // Pagination handler - Zustand is the single source of truth
   const handlePaginationChange = (model: GridPaginationModel) => {
-    setLocalPage(model.page);
-    setLocalPageSize(model.pageSize);
+    if (model.page === state.page && model.pageSize === state.pageSize) return;
     updateState({ page: model.page, pageSize: model.pageSize });
   };
 
@@ -948,7 +938,7 @@ export default function ProductsPage() {
         loading={isLoading || isFetching}
         getRowId={(row) => row.id}
         pageSizeOptions={[10, 25, 50, 100]}
-        paginationModel={{ page, pageSize }}
+        paginationModel={{ page: state.page, pageSize: state.pageSize }}
         onPaginationModelChange={handlePaginationChange}
         paginationMode="server"
         sortModel={state.sortModel}
