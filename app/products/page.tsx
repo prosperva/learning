@@ -442,12 +442,16 @@ export default function ProductsPage() {
   const {
     columnVisibilityModel,
     setColumnsVisible,
+    resetToResponsiveDefaults,
+    hasCustomVisibility,
   } = useResponsiveColumnVisibility({
     columns,
     responsiveConfig: responsiveColumnConfig,
     userVisibility: state.columnVisibility,
     onUserVisibilityChange: setColumnVisibility,
     userPreferencesPriority: true, // User can override responsive hiding
+    minimumVisibleColumns: 1,
+    excludeFromMinimum: ['actions', '__check__'],
   });
 
   // Column config for report view
@@ -929,6 +933,17 @@ export default function ProductsPage() {
   // Render grid view
   const renderGridView = () => (
     <Paper elevation={1} sx={{ height: 500, width: '100%' }} ref={scrollContainerRef}>
+      {hasCustomVisibility && (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', px: 1, pt: 1 }}>
+          <Button
+            size="small"
+            startIcon={<RefreshIcon />}
+            onClick={resetToResponsiveDefaults}
+          >
+            Reset Columns
+          </Button>
+        </Box>
+      )}
       <DataGrid
         rows={data?.data || []}
         columns={columns}

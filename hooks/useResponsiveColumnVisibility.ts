@@ -35,6 +35,10 @@ interface UseResponsiveColumnVisibilityOptions {
   // Whether to respect user preferences over responsive rules
   // If true, user preferences override responsive hiding
   userPreferencesPriority?: boolean;
+  // Minimum number of data columns that must remain visible (default: 1)
+  minimumVisibleColumns?: number;
+  // Fields excluded from the minimum count (e.g., 'actions', '__check__')
+  excludeFromMinimum?: string[];
 }
 
 interface UseResponsiveColumnVisibilityReturn {
@@ -54,6 +58,8 @@ interface UseResponsiveColumnVisibilityReturn {
   responsiveHiddenColumns: string[];
   // Get columns that are hidden due to user preferences
   userHiddenColumns: string[];
+  // Whether the user has customized column visibility (useful for showing reset button)
+  hasCustomVisibility: boolean;
 }
 
 function getBreakpoint(width: number): Breakpoint {
@@ -81,6 +87,8 @@ export function useResponsiveColumnVisibility({
   userVisibility = {},
   onUserVisibilityChange,
   userPreferencesPriority = true,
+  minimumVisibleColumns = 1,
+  excludeFromMinimum = ['actions', '__check__'],
 }: UseResponsiveColumnVisibilityOptions): UseResponsiveColumnVisibilityReturn {
   const [screenWidth, setScreenWidth] = useState(
     typeof window !== 'undefined' ? window.innerWidth : BREAKPOINTS.lg
@@ -167,28 +175,56 @@ export function useResponsiveColumnVisibility({
     return merged;
   }, [columns, responsiveVisibility, userVisibility, userPreferencesPriority]);
 
+  // Count visible data columns in a given visibility model (excluding non-data columns)
+  const countVisibleDataColumns = useCallback(
+    (visibilityModel: Record<string, boolean>) => {
+      return columns.filter((col) => {
+        if (excludeFromMinimum.includes(col.field)) return false;
+        return visibilityModel[col.field] !== false;
+      }).length;
+    },
+    [columns, excludeFromMinimum]
+  );
+
   // Update single column visibility (user preference)
   const setColumnVisible = useCallback(
     (field: string, visible: boolean) => {
+      // If hiding a column, check minimum
+      if (!visible) {
+        const projected = { ...columnVisibilityModel, [field]: false };
+        if (countVisibleDataColumns(projected) < minimumVisibleColumns) {
+          return; // Block: would hide all data columns
+        }
+      }
       const newVisibility = { ...userVisibility, [field]: visible };
       onUserVisibilityChange?.(newVisibility);
     },
-    [userVisibility, onUserVisibilityChange]
+    [userVisibility, onUserVisibilityChange, columnVisibilityModel, countVisibleDataColumns, minimumVisibleColumns]
   );
 
   // Update multiple columns (user preferences)
   const setColumnsVisible = useCallback(
     (visibility: Record<string, boolean>) => {
+      const projected = { ...columnVisibilityModel, ...visibility };
+      if (countVisibleDataColumns(projected) < minimumVisibleColumns) {
+        return; // Block: would hide all data columns
+      }
       const newVisibility = { ...userVisibility, ...visibility };
       onUserVisibilityChange?.(newVisibility);
     },
-    [userVisibility, onUserVisibilityChange]
+    [userVisibility, onUserVisibilityChange, columnVisibilityModel, countVisibleDataColumns, minimumVisibleColumns]
   );
 
   // Reset to responsive defaults (clear all user preferences)
   const resetToResponsiveDefaults = useCallback(() => {
     onUserVisibilityChange?.({});
   }, [onUserVisibilityChange]);
+
+  // Whether the user has any custom visibility preferences set
+  const hasCustomVisibility = useMemo(
+    () => Object.keys(userVisibility).length > 0,
+    [userVisibility]
+  );
 
   return {
     columnVisibilityModel,
@@ -199,6 +235,7 @@ export function useResponsiveColumnVisibility({
     resetToResponsiveDefaults,
     responsiveHiddenColumns,
     userHiddenColumns,
+    hasCustomVisibility,
   };
 }
 
