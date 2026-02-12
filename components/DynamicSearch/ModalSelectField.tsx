@@ -211,6 +211,7 @@ export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
     <Box>
       <TextField
         fullWidth
+        size="small"
         label={labelWithTooltip}
         value={displayText}
         placeholder={placeholder || 'Click Select to choose...'}
@@ -226,7 +227,7 @@ export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
         }}
       />
 
-      <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+      <Stack direction="row" spacing={0.5} sx={{ mt: 0.5 }}>
         <Button
           variant="outlined"
           color="primary"
@@ -265,9 +266,10 @@ export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
         <DialogTitle>{label}</DialogTitle>
         <DialogContent sx={{ p: 0 }}>
           {/* Filter Input */}
-          <Box sx={{ p: 2, pb: 1, position: 'sticky', top: 0, bgcolor: 'background.paper', zIndex: 1 }}>
+          <Box sx={{ p: 1.5, pb: 1, position: 'sticky', top: 0, bgcolor: 'background.paper', zIndex: 1 }}>
             <TextField
               fullWidth
+              size="small"
               placeholder="Filter options..."
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}

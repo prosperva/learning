@@ -622,56 +622,59 @@ export const DynamicSearch: React.FC<DynamicSearchProps> = ({
 
           <Box
             sx={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 3,
-              '& > *': {
-                // Calculate width based on number of columns with gap consideration
-                // For 1 col: 100%, 2 cols: ~48%, 3 cols: ~31%, 4 cols: ~23%
-                flexBasis: `calc(${100 / getNumColumns()}% - ${((getNumColumns() - 1) * 24) / getNumColumns()}px)`,
-                flexGrow: 0,
-                flexShrink: 0,
-                boxSizing: 'border-box',
-                // Override any external min-width styles
-                minWidth: '0 !important',
-                maxWidth: '100%',
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: '1fr',
+                sm: getNumColumns() === 1 ? '1fr' : 'repeat(2, 1fr)',
+                md: `repeat(${getNumColumns()}, 1fr)`,
               },
+              gap: 2,
+              alignItems: 'start',
               // Override any nested form elements that might have forced min-width
               '& .MuiFormControl-root, & .MuiAutocomplete-root, & .MuiTextField-root': {
                 minWidth: 'unset !important',
               },
-              // Responsive overrides
-              '@media (max-width: 900px)': {
-                '& > *': {
-                  flexBasis: getNumColumns() === 1 ? '100%' : 'calc(50% - 12px)',
-                },
-              },
-              '@media (max-width: 600px)': {
-                '& > *': {
-                  flexBasis: '100%',
-                },
-              },
             }}
           >
-            {fields.map((field) => (
-              <Box key={field.name}>
-                <FieldRenderer
-                  field={field}
-                  value={formValues[field.name]}
-                  onChange={handleFieldChange}
-                  error={validationErrors[field.name]}
-                  allValues={formValues}
-                  allFields={fields}
-                  formMode={formMode}
-                />
-              </Box>
-            ))}
+            {fields.map((field) => {
+              // Determine grid span: explicit gridSpan > auto based on type > 1
+              const numCols = getNumColumns();
+              let span: number | 'full' = field.gridSpan || 1;
+              if (!field.gridSpan) {
+                // Auto-span based on field type
+                if (field.type === 'group' || field.type === 'accordion') {
+                  span = 'full';
+                }
+              }
+              // Clamp span to number of columns
+              const effectiveSpan = span === 'full' ? numCols : Math.min(span, numCols);
+              const gridColumn = effectiveSpan > 1 ? `span ${effectiveSpan}` : undefined;
+
+              return (
+                <Box
+                  key={field.name}
+                  sx={gridColumn ? {
+                    gridColumn: { xs: '1 / -1', md: gridColumn },
+                  } : undefined}
+                >
+                  <FieldRenderer
+                    field={field}
+                    value={formValues[field.name]}
+                    onChange={handleFieldChange}
+                    error={validationErrors[field.name]}
+                    allValues={formValues}
+                    allFields={fields}
+                    formMode={formMode}
+                  />
+                </Box>
+              );
+            })}
 
             {/* Custom fields - developer has full control */}
             {customFields && customFields(formValues, handleFieldChange)}
           </Box>
 
-          <Divider sx={{ my: 3 }} />
+          <Divider sx={{ my: 2 }} />
 
           {/* Output Format Selector - inside search form */}
           {enableViewMode && (

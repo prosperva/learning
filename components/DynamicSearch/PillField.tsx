@@ -179,7 +179,8 @@ export const PillField: React.FC<PillFieldProps> = ({
       <TextField
         fullWidth
         multiline
-        rows={3}
+        size="small"
+        rows={2}
         label={labelWithTooltip}
         value={inputText}
         onChange={handleTextChange}
@@ -195,7 +196,7 @@ export const PillField: React.FC<PillFieldProps> = ({
           '& .MuiOutlinedInput-root': {
             minWidth: 'unset',
             width: '100%',
-            padding: '12px 14px',
+            padding: '8px 12px',
             alignItems: 'flex-start',
           },
           '& .MuiOutlinedInput-input': {
@@ -211,8 +212,8 @@ export const PillField: React.FC<PillFieldProps> = ({
         <>
           <Box
             sx={{
-              mt: 2,
-              p: 1.5,
+              mt: 1,
+              p: 1,
               border: '1px solid',
               borderColor: 'divider',
               borderRadius: 1,
@@ -294,7 +295,7 @@ export const PillField: React.FC<PillFieldProps> = ({
             )}
           </Box>
 
-          <Stack direction="row" spacing={1} sx={{ mt: 1 }} alignItems="center">
+          <Stack direction="row" spacing={0.5} sx={{ mt: 0.5 }} alignItems="center">
             <Button
               size="small"
               onClick={handleClearAll}

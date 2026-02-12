@@ -220,6 +220,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
         <FieldWrapper>
           <TextField
             fullWidth
+            size="small"
             label={<LabelWithTooltip label={field.label} tooltip={field.tooltip} />}
             name={field.name}
             value={value || ''}
@@ -240,6 +241,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
         <FieldWrapper>
           <TextField
             fullWidth
+            size="small"
             type="number"
             label={<LabelWithTooltip label={field.label} tooltip={field.tooltip} />}
             name={field.name}
@@ -269,6 +271,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
               slotProps={{
                 textField: {
                   fullWidth: true,
+                  size: 'small',
                   required: isRequired,
                   helperText: error || field.helperText,
                   variant: 'outlined',
@@ -286,6 +289,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
       return (
         <FieldWrapper>
           <Autocomplete
+            size="small"
             options={options}
             value={selectedOption}
             onChange={(_, newValue) => {
@@ -327,6 +331,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
           <Box sx={{ width: '100%' }}>
             <Autocomplete
               multiple
+              size="small"
               options={options}
               value={selectedOptions}
               onChange={(_, newValue) => {
@@ -356,20 +361,8 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
                 ))
               }
               fullWidth
-              sx={{
-                width: '100%',
-                '& .MuiAutocomplete-inputRoot': {
-                  flexWrap: 'wrap',
-                  minHeight: '56px',
-                  height: 'auto',
-                  padding: '8px 14px 8px 8px',
-                },
-                '& .MuiAutocomplete-tag': {
-                  margin: '2px',
-                },
-              }}
             />
-            <Stack direction="row" spacing={1} sx={{ mt: 1.5 }} alignItems="center">
+            <Stack direction="row" spacing={0.5} sx={{ mt: 0.5 }} alignItems="center">
               <Button
                 size="small"
                 onClick={handleSelectAll}
@@ -399,18 +392,34 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
     case 'checkbox':
       return (
         <FieldWrapper>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={value || false}
-                onChange={(e) => handleChange(e.target.checked)}
-                name={field.name}
-                disabled={isDisabled}
-              />
-            }
-            label={<LabelWithTooltip label={field.label} tooltip={field.tooltip} />}
-            sx={{ mt: 1 }}
-          />
+          <Box
+            sx={{
+              border: '1px solid',
+              borderColor: 'rgba(0, 0, 0, 0.23)',
+              borderRadius: 1,
+              px: 1,
+              height: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              '&:hover': { borderColor: 'text.primary' },
+            }}
+          >
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={value || false}
+                  onChange={(e) => handleChange(e.target.checked)}
+                  name={field.name}
+                  disabled={isDisabled}
+                />
+              }
+              label={<LabelWithTooltip label={field.label} tooltip={field.tooltip} />}
+              sx={{ m: 0 }}
+            />
+          </Box>
+          {(error || field.helperText) && (
+            <FormHelperText error={!!error} sx={{ mx: 1.75 }}>{error || field.helperText}</FormHelperText>
+          )}
         </FieldWrapper>
       );
 
@@ -418,20 +427,22 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
       return (
         <FieldWrapper>
           <FormControl component="fieldset" required={isRequired} error={!!error} disabled={isDisabled} sx={{ width: '100%' }}>
-            <FormLabel component="legend">
+            <FormLabel component="legend" sx={{ fontSize: '0.85rem' }}>
               <LabelWithTooltip label={field.label} tooltip={field.tooltip} />
             </FormLabel>
             <RadioGroup
               name={field.name}
               value={value || ''}
               onChange={(e) => handleChange(e.target.value)}
+              row
             >
               {options.map((option) => (
                 <FormControlLabel
                   key={option.value}
                   value={option.value}
-                  control={<Radio />}
+                  control={<Radio size="small" />}
                   label={option.label}
+                  sx={{ '& .MuiFormControlLabel-label': { fontSize: '0.875rem' } }}
                 />
               ))}
             </RadioGroup>
@@ -465,16 +476,26 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
     case 'group':
       return (
         <FieldWrapper>
-          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 2, width: '100%' }}>
-            <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <FormLabel component="legend" sx={{ fontWeight: 'bold', fontSize: '0.95rem' }}>
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1.5, width: '100%' }}>
+            <Box sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <FormLabel component="legend" sx={{ fontWeight: 'bold', fontSize: '0.85rem' }}>
                 <LabelWithTooltip label={field.label} tooltip={field.tooltip} />
               </FormLabel>
             </Box>
             {field.helperText && (
-              <FormHelperText sx={{ mt: -1, mb: 2 }}>{field.helperText}</FormHelperText>
+              <FormHelperText sx={{ mt: -0.5, mb: 1 }}>{field.helperText}</FormHelperText>
             )}
-            <Stack spacing={2}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  sm: (field.fields?.length || 0) > 1 ? 'repeat(2, 1fr)' : '1fr',
+                },
+                gap: 2,
+                alignItems: 'start',
+              }}
+            >
               {field.fields?.map((subField) => (
                 <FieldRenderer
                   key={subField.name}
@@ -489,7 +510,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
                   formMode={formMode}
                 />
               ))}
-            </Stack>
+            </Box>
           </Box>
         </FieldWrapper>
       );
@@ -506,7 +527,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                <FormLabel component="legend" sx={{ fontWeight: 'bold', fontSize: '0.95rem' }}>
+                <FormLabel component="legend" sx={{ fontWeight: 'bold', fontSize: '0.85rem' }}>
                   <LabelWithTooltip label={field.label} tooltip={field.tooltip} />
                 </FormLabel>
                 {field.helperText && (
@@ -516,8 +537,18 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
                 )}
               </Box>
             </AccordionSummary>
-            <AccordionDetails sx={{ pt: 2 }}>
-              <Stack spacing={2}>
+            <AccordionDetails sx={{ pt: 1.5 }}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    xs: '1fr',
+                    sm: (field.fields?.length || 0) > 1 ? 'repeat(2, 1fr)' : '1fr',
+                  },
+                  gap: 2,
+                  alignItems: 'start',
+                }}
+              >
                 {field.fields?.map((subField) => (
                   <FieldRenderer
                     key={subField.name}
@@ -532,7 +563,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
                     formMode={formMode}
                   />
                 ))}
-              </Stack>
+              </Box>
             </AccordionDetails>
           </Accordion>
         </FieldWrapper>

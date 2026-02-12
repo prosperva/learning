@@ -32,6 +32,7 @@ export interface FieldConfig {
   defaultExpanded?: boolean; // For accordion: whether section starts expanded (default: false)
   copyFromField?: string; // Field name to copy value from (creates a "Copy from X" button)
   copyButtonText?: string; // Custom text for copy button (default: "Copy from {fieldLabel}")
+  gridSpan?: 1 | 2 | 3 | 4 | 'full'; // How many grid columns this field spans (default: auto based on type)
 }
 
 export type SearchVisibility = 'user' | 'global';
