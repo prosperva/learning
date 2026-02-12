@@ -311,6 +311,7 @@ export const DynamicSearch: React.FC<DynamicSearchProps> = ({
 
     const flattenedValues = flattenValues(formValues);
     onSearch(flattenedValues, selectedViewMode);
+    setSearchExpanded(false);
   };
 
   const handleViewModeChange = (mode: ViewMode) => {
@@ -586,12 +587,19 @@ export const DynamicSearch: React.FC<DynamicSearchProps> = ({
 
       <Paper elevation={formMode === 'edit' ? 0 : 3} sx={{ p: formMode === 'edit' ? 0 : 3, mb: 2 }}>
         {formMode !== 'edit' && (
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            mb={2}
+            onClick={() => setSearchExpanded(!searchExpanded)}
+            sx={{ cursor: 'pointer', userSelect: 'none' }}
+          >
             <Typography variant="h5" component="h2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <SearchIcon color="primary" />
               Advanced Search
             </Typography>
-            <IconButton onClick={() => setSearchExpanded(!searchExpanded)}>
+            <IconButton component="span" tabIndex={-1}>
               {searchExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
             </IconButton>
           </Box>
