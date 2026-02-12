@@ -112,4 +112,6 @@ export interface DynamicSearchProps {
   onExport?: (reportId: string, format: ReportFormat, params: Record<string, any>) => void; // Callback when user wants to export/download
   customFields?: (values: Record<string, any>, onChange: (name: string, value: any) => void) => React.ReactNode; // Custom fields render function
   formMode?: FormMode; // Form mode: 'search' or 'edit' (default: 'search')
+  defaultExpanded?: boolean; // Whether the search section starts expanded (default: true)
+  searchTitle?: string; // Title for the search section (default: 'Advanced Search')
 }

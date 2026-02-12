@@ -1206,6 +1206,7 @@ export default function ProductsPage() {
         onViewModeChange={setViewMode}
         reportOptions={reportOptions}
         initialValues={state.filters}
+        defaultExpanded={!hasSearched}
       />
 
       {/* Search Results */}

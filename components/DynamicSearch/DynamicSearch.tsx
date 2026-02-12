@@ -152,6 +152,8 @@ export const DynamicSearch: React.FC<DynamicSearchProps> = ({
   reportOptions,
   customFields,
   formMode = 'search',
+  defaultExpanded = true,
+  searchTitle = 'Advanced Search',
 }) => {
   const [formValues, setFormValues] = useState<Record<string, any>>(() => {
     const values: Record<string, any> = {};
@@ -176,7 +178,7 @@ export const DynamicSearch: React.FC<DynamicSearchProps> = ({
   const [searchName, setSearchName] = useState('');
   const [searchDescription, setSearchDescription] = useState('');
   const [searchVisibility, setSearchVisibility] = useState<SearchVisibility>('user');
-  const [searchExpanded, setSearchExpanded] = useState(true);
+  const [searchExpanded, setSearchExpanded] = useState(defaultExpanded);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [selectedViewMode, setSelectedViewMode] = useState<ViewMode>(defaultViewMode);
@@ -597,7 +599,7 @@ export const DynamicSearch: React.FC<DynamicSearchProps> = ({
           >
             <Typography variant="h5" component="h2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <SearchIcon color="primary" />
-              Advanced Search
+              {searchTitle}
             </Typography>
             <IconButton component="span" tabIndex={-1}>
               {searchExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
