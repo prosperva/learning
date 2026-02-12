@@ -620,115 +620,117 @@ export const DynamicSearch: React.FC<DynamicSearchProps> = ({
             </Alert>
           )}
 
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: '1fr',
-                sm: getNumColumns() === 1 ? '1fr' : 'repeat(2, 1fr)',
-                md: `repeat(${getNumColumns()}, 1fr)`,
-              },
-              gap: 2,
-              alignItems: 'start',
-              // Override any nested form elements that might have forced min-width
-              '& .MuiFormControl-root, & .MuiAutocomplete-root, & .MuiTextField-root': {
-                minWidth: 'unset !important',
-              },
-            }}
-          >
-            {fields.map((field) => {
-              // Determine grid span: explicit gridSpan > auto based on type > 1
-              const numCols = getNumColumns();
-              let span: number | 'full' = field.gridSpan || 1;
-              if (!field.gridSpan) {
-                // Auto-span based on field type
-                if (field.type === 'group' || field.type === 'accordion') {
-                  span = 'full';
+          <Box sx={{ maxWidth: getNumColumns() > 2 ? `${(2 / getNumColumns()) * 100}%` : '100%' }}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  sm: getNumColumns() === 1 ? '1fr' : 'repeat(2, 1fr)',
+                  md: 'repeat(2, 1fr)',
+                },
+                gap: 2,
+                alignItems: 'start',
+                // Override any nested form elements that might have forced min-width
+                '& .MuiFormControl-root, & .MuiAutocomplete-root, & .MuiTextField-root': {
+                  minWidth: 'unset !important',
+                },
+              }}
+            >
+              {fields.map((field) => {
+                // Determine grid span: explicit gridSpan > auto based on type > 1
+                const numCols = 2; // Always 2 visual columns
+                let span: number | 'full' = field.gridSpan || 1;
+                if (!field.gridSpan) {
+                  // Auto-span based on field type
+                  if (field.type === 'group' || field.type === 'accordion') {
+                    span = 'full';
+                  }
                 }
-              }
-              // Clamp span to number of columns
-              const effectiveSpan = span === 'full' ? numCols : Math.min(span, numCols);
-              const gridColumn = effectiveSpan > 1 ? `span ${effectiveSpan}` : undefined;
+                // Clamp span to number of columns
+                const effectiveSpan = span === 'full' ? numCols : Math.min(span, numCols);
+                const gridColumn = effectiveSpan > 1 ? `span ${effectiveSpan}` : undefined;
 
-              return (
-                <Box
-                  key={field.name}
-                  sx={gridColumn ? {
-                    gridColumn: { xs: '1 / -1', md: gridColumn },
-                  } : undefined}
-                >
-                  <FieldRenderer
-                    field={field}
-                    value={formValues[field.name]}
-                    onChange={handleFieldChange}
-                    error={validationErrors[field.name]}
-                    allValues={formValues}
-                    allFields={fields}
-                    formMode={formMode}
-                  />
-                </Box>
-              );
-            })}
+                return (
+                  <Box
+                    key={field.name}
+                    sx={gridColumn ? {
+                      gridColumn: { xs: '1 / -1', md: gridColumn },
+                    } : undefined}
+                  >
+                    <FieldRenderer
+                      field={field}
+                      value={formValues[field.name]}
+                      onChange={handleFieldChange}
+                      error={validationErrors[field.name]}
+                      allValues={formValues}
+                      allFields={fields}
+                      formMode={formMode}
+                    />
+                  </Box>
+                );
+              })}
 
-            {/* Custom fields - developer has full control */}
-            {customFields && customFields(formValues, handleFieldChange)}
-          </Box>
-
-          <Divider sx={{ my: 2 }} />
-
-          {/* Output Format Selector - inside search form */}
-          {enableViewMode && (
-            <Box mb={2}>
-              <SearchableDropdown
-                label="Output Format"
-                value={selectedViewMode}
-                onChange={(newValue) => handleViewModeChange(newValue as ViewMode)}
-                options={
-                  reportOptions
-                    ? reportOptions.map(option => ({
-                        label: option.label,
-                        value: option.id,
-                      }))
-                    : availableViewModes.map(mode => ({
-                        label: mode === 'grid' ? 'Search Results' : 'Report',
-                        value: mode,
-                      }))
-                }
-              />
+              {/* Custom fields - developer has full control */}
+              {customFields && customFields(formValues, handleFieldChange)}
             </Box>
-          )}
 
-          <Box display="flex" gap={2} flexWrap="wrap">
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<SearchIcon />}
-              onClick={handleSearch}
-              size="large"
-            >
-              {searchButtonText}
-            </Button>
+            <Divider sx={{ my: 2 }} />
 
-            <Button
-              variant="outlined"
-              startIcon={<RefreshIcon />}
-              onClick={handleReset}
-              size="large"
-            >
-              {resetButtonText}
-            </Button>
+            {/* Output Format Selector - inside search form */}
+            {enableViewMode && (
+              <Box mb={2}>
+                <SearchableDropdown
+                  label="Output Format"
+                  value={selectedViewMode}
+                  onChange={(newValue) => handleViewModeChange(newValue as ViewMode)}
+                  options={
+                    reportOptions
+                      ? reportOptions.map(option => ({
+                          label: option.label,
+                          value: option.id,
+                        }))
+                      : availableViewModes.map(mode => ({
+                          label: mode === 'grid' ? 'Search Results' : 'Report',
+                          value: mode,
+                        }))
+                  }
+                />
+              </Box>
+            )}
 
-            {enableSaveSearch && (
+            <Box display="flex" gap={2} flexWrap="wrap">
               <Button
-                variant="outlined"
-                color="secondary"
-                startIcon={<SaveIcon />}
-                onClick={() => setSaveDialogOpen(true)}
+                variant="contained"
+                color="primary"
+                startIcon={<SearchIcon />}
+                onClick={handleSearch}
                 size="large"
               >
-                Save Search
+                {searchButtonText}
               </Button>
-            )}
+
+              <Button
+                variant="outlined"
+                startIcon={<RefreshIcon />}
+                onClick={handleReset}
+                size="large"
+              >
+                {resetButtonText}
+              </Button>
+
+              {enableSaveSearch && (
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  startIcon={<SaveIcon />}
+                  onClick={() => setSaveDialogOpen(true)}
+                  size="large"
+                >
+                  Save Search
+                </Button>
+              )}
+            </Box>
           </Box>
         </Collapse>
       </Paper>

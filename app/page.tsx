@@ -1022,7 +1022,7 @@ export default function Home() {
         searchContext="products"
         allowCrossContext={false}
         isAdmin={false}
-        columnLayout={2}
+        columnLayout={3}
         enableViewMode={true}
         defaultViewMode="grid"
         onViewModeChange={setViewMode}
