@@ -102,6 +102,13 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
   const [options, setOptions] = useState<DropdownOption[]>(field.options || []);
   const [loading, setLoading] = useState(false);
 
+  // Sync options when field.options prop changes (e.g. from React Query)
+  useEffect(() => {
+    if (field.options) {
+      setOptions(field.options);
+    }
+  }, [field.options]);
+
   // Determine if field is required based on form mode
   const isRequired = field.required ||
     (formMode === 'edit' && field.requiredForEdit) ||
@@ -284,7 +291,8 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
       );
 
     case 'dropdown':
-      const selectedOption = options.find((opt) => opt.value === value) || null;
+      const selectedOption = options.find((opt) => opt.value !== undefined && opt.value === value)
+        || (!value && value !== 0 ? options.find((opt) => opt.value === undefined) ?? null : null);
 
       return (
         <FieldWrapper>
@@ -293,11 +301,14 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
             options={options}
             value={selectedOption}
             onChange={(_, newValue) => {
-              handleChange(newValue ? newValue.value : '');
+              handleChange(!newValue || newValue.value === undefined ? '' : newValue.value);
             }}
             disabled={isDisabled}
             getOptionLabel={(option) => option.label}
-            isOptionEqualToValue={(option, value) => option.value === value.value}
+            isOptionEqualToValue={(option, val) => {
+              if (option.value === undefined && val.value === undefined) return true;
+              return option.value === val.value;
+            }}
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -314,9 +325,10 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
       );
 
     case 'multiselect':
-      const allOptionValues = options.map(opt => opt.value);
-      const allSelected = value?.length === options.length;
-      const selectedOptions = options.filter((opt) => (value || []).includes(opt.value));
+      const valuedOptions = options.filter(opt => opt.value !== undefined);
+      const allOptionValues = valuedOptions.map(opt => opt.value);
+      const allSelected = value?.length === valuedOptions.length;
+      const selectedOptions = valuedOptions.filter((opt) => (value || []).includes(opt.value));
 
       const handleSelectAll = () => {
         handleChange(allOptionValues);
@@ -335,11 +347,15 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
               options={options}
               value={selectedOptions}
               onChange={(_, newValue) => {
-                handleChange(newValue.map((opt) => opt.value));
+                const hasValueless = newValue.some(opt => opt.value === undefined);
+                handleChange(hasValueless ? [] : newValue.map((opt) => opt.value));
               }}
               disabled={isDisabled}
               getOptionLabel={(option) => option.label}
-              isOptionEqualToValue={(option, value) => option.value === value.value}
+              isOptionEqualToValue={(option, val) => {
+                if (option.value === undefined && val.value === undefined) return true;
+                return option.value === val.value;
+              }}
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -354,7 +370,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
                 value.map((option, index) => (
                   <Chip
                     {...getTagProps({ index })}
-                    key={option.value}
+                    key={option.value ?? option.label}
                     label={option.label}
                     size="small"
                   />

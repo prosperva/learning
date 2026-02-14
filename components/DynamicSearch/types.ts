@@ -2,7 +2,7 @@ export type FieldType = 'text' | 'number' | 'dropdown' | 'checkbox' | 'radio' | 
 
 export interface DropdownOption {
   label: string;
-  value: string | number;
+  value?: string | number; // Optional - if missing, selecting this option clears the field
 }
 
 export type FormMode = 'search' | 'edit';

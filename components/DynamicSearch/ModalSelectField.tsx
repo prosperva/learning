@@ -303,16 +303,16 @@ export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
                 </Box>
               </ListItem>
             ) : filteredOptions.length > 0 ? (
-              filteredOptions.map((option) => (
+              filteredOptions.filter(opt => opt.value !== undefined).map((option) => (
                 <ListItem key={option.value} disablePadding>
                   <ListItemButton
-                    selected={isSelected(option.value)}
-                    onClick={() => handleSelectOption(option.value)}
+                    selected={isSelected(option.value!)}
+                    onClick={() => handleSelectOption(option.value!)}
                   >
                     {allowMultiple && (
                       <Checkbox
                         edge="start"
-                        checked={isSelected(option.value)}
+                        checked={isSelected(option.value!)}
                         tabIndex={-1}
                         disableRipple
                         sx={{ mr: 1 }}
