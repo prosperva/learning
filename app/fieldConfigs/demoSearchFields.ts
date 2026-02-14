@@ -168,32 +168,22 @@ export function useDemoSearchFields() {
         tooltip: 'Multi-select mode with checkboxes in modal dialog',
       },
       {
-        name: 'farmInfo',
-        label: 'Farm Information',
-        type: 'group' as const,
-        helperText: 'Multiple fields grouped under one label',
-        tooltip:
-          'This group demonstrates how to organize related fields together while keeping them as separate API parameters',
-        fields: [
-          {
-            name: 'farmName',
-            label: 'Farm Name',
-            type: 'text' as const,
-            placeholder: 'Enter farm name...',
-          },
-          {
-            name: 'animalType',
-            label: 'Animal Type',
-            type: 'dropdown' as const,
-            options: [
-              { label: '-- Any --' },
-              { label: 'Cattle', value: 'cattle' },
-              { label: 'Sheep', value: 'sheep' },
-              { label: 'Pigs', value: 'pigs' },
-              { label: 'Chickens', value: 'chickens' },
-              { label: 'Goats', value: 'goats' },
-            ],
-          },
+        name: 'farmName',
+        label: 'Farm Name',
+        type: 'text' as const,
+        placeholder: 'Enter farm name...',
+      },
+      {
+        name: 'animalType',
+        label: 'Animal Type',
+        type: 'dropdown' as const,
+        options: [
+          { label: '-- Any --' },
+          { label: 'Cattle', value: 'cattle' },
+          { label: 'Sheep', value: 'sheep' },
+          { label: 'Pigs', value: 'pigs' },
+          { label: 'Chickens', value: 'chickens' },
+          { label: 'Goats', value: 'goats' },
         ],
       },
       // Pill fields at the end to prevent layout shifts when expanded

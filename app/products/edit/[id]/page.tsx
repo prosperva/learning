@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,8 +17,12 @@ import {
   Alert,
   Divider,
   Skeleton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
-import { ArrowBack as ArrowBackIcon, Save as SaveIcon } from '@mui/icons-material';
+import { ArrowBack as ArrowBackIcon, Save as SaveIcon, OpenInNew as OpenInNewIcon } from '@mui/icons-material';
 import { useGridManagement } from '@/hooks/useGridManagement';
 import { useProduct, useUpdateProduct, type UpdateProductInput } from '@/hooks/useProducts';
 import { LockService } from '@/lib/lockService';
@@ -55,6 +59,7 @@ export default function ProductEditPage() {
   const id = Number(params.id);
   const currentUser = 'demo_user@example.com'; // In production, get from auth context
   const lockReleasedRef = useRef(false);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
 
   // Use grid management hook for navigation
   const { returnToGrid } = useGridManagement({
@@ -118,6 +123,7 @@ export default function ProductEditPage() {
     control,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isDirty, isSubmitting },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -232,7 +238,7 @@ export default function ProductEditPage() {
       {/* Edit Form */}
       <Paper elevation={2} sx={{ p: 3 }}>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <Box sx={{ maxWidth: '50%', display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 3 }}>
+          <Box sx={{ maxWidth: { xs: '100%', sm: '60%', md: '40%', lg: '25%' }, display: 'flex', flexDirection: 'column', gap: 3 }}>
             {/* Product Name */}
             <Controller
               name="name"
@@ -250,27 +256,38 @@ export default function ProductEditPage() {
             />
 
             {/* Category */}
-            <Controller
-              name="category"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  select
-                  label="Category"
-                  error={!!errors.category}
-                  helperText={errors.category?.message}
-                  fullWidth
-                  required
-                >
-                  {categories.map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            />
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+              <Controller
+                name="category"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    select
+                    label="Category"
+                    error={!!errors.category}
+                    helperText={errors.category?.message}
+                    fullWidth
+                    required
+                  >
+                    {categories.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+              <Button
+                variant="outlined"
+                onClick={() => setCategoryModalOpen(true)}
+                disabled={!watch('category')}
+                startIcon={<OpenInNewIcon />}
+                sx={{ whiteSpace: 'nowrap', height: '56px' }}
+              >
+                Move to
+              </Button>
+            </Box>
 
             {/* Status */}
             <Controller
@@ -337,32 +354,27 @@ export default function ProductEditPage() {
               )}
             />
 
-            {/* Description - spans full width */}
-            <Box sx={{ gridColumn: '1 / -1' }}>
-              <Controller
-                name="description"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Description"
-                    error={!!errors.description}
-                    helperText={errors.description?.message}
-                    fullWidth
-                    multiline
-                    rows={4}
-                  />
-                )}
-              />
-            </Box>
+            {/* Description */}
+            <Controller
+              name="description"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Description"
+                  error={!!errors.description}
+                  helperText={errors.description?.message}
+                  fullWidth
+                  multiline
+                  rows={4}
+                />
+              )}
+            />
 
-            {/* Divider - spans full width */}
-            <Box sx={{ gridColumn: '1 / -1' }}>
-              <Divider />
-            </Box>
+            <Divider />
 
-            {/* Action Buttons - spans full width */}
-            <Box sx={{ gridColumn: '1 / -1', display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+            {/* Action Buttons */}
+            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
               <Button
                 variant="outlined"
                 onClick={handleBack}
@@ -400,6 +412,21 @@ export default function ProductEditPage() {
           </Typography>
         </Paper>
       )}
+      {/* Category Modal */}
+      <Dialog open={categoryModalOpen} onClose={() => setCategoryModalOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Category Details</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mt: 1 }}>
+            Category ID: <strong>{watch('category')}</strong>
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            {categories.find(c => c.value === watch('category'))?.label}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCategoryModalOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }
