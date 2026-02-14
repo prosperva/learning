@@ -171,7 +171,7 @@ export default function ProductEditPage() {
   // Loading skeleton
   if (isLoading) {
     return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
+      <Container maxWidth={false} sx={{ py: 4 }}>
         <Button startIcon={<ArrowBackIcon />} onClick={handleBack} sx={{ mb: 3 }}>
           Back to Products
         </Button>
@@ -196,7 +196,7 @@ export default function ProductEditPage() {
   // Error state
   if (isError) {
     return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
+      <Container maxWidth={false} sx={{ py: 4 }}>
         <Button startIcon={<ArrowBackIcon />} onClick={handleBack} sx={{ mb: 2 }}>
           Back to Products
         </Button>
@@ -208,7 +208,7 @@ export default function ProductEditPage() {
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <Container maxWidth={false} sx={{ py: 4 }}>
       {/* Back Button */}
       <Button startIcon={<ArrowBackIcon />} onClick={handleBack} sx={{ mb: 3 }}>
         Back to Products
@@ -232,7 +232,7 @@ export default function ProductEditPage() {
       {/* Edit Form */}
       <Paper elevation={2} sx={{ p: 3 }}>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box sx={{ maxWidth: '50%', display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 3 }}>
             {/* Product Name */}
             <Controller
               name="name"
@@ -295,70 +295,74 @@ export default function ProductEditPage() {
               )}
             />
 
-            {/* Price and Stock Row */}
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Controller
-                name="price"
-                control={control}
-                render={({ field: { onChange, ...field } }) => (
-                  <TextField
-                    {...field}
-                    label="Price ($)"
-                    type="number"
-                    error={!!errors.price}
-                    helperText={errors.price?.message}
-                    fullWidth
-                    required
-                    slotProps={{
-                      htmlInput: { min: 0, step: 0.01 },
-                    }}
-                    onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-                  />
-                )}
-              />
+            {/* Price */}
+            <Controller
+              name="price"
+              control={control}
+              render={({ field: { onChange, ...field } }) => (
+                <TextField
+                  {...field}
+                  label="Price ($)"
+                  type="number"
+                  error={!!errors.price}
+                  helperText={errors.price?.message}
+                  fullWidth
+                  required
+                  slotProps={{
+                    htmlInput: { min: 0, step: 0.01 },
+                  }}
+                  onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+                />
+              )}
+            />
 
+            {/* Stock */}
+            <Controller
+              name="stock"
+              control={control}
+              render={({ field: { onChange, ...field } }) => (
+                <TextField
+                  {...field}
+                  label="Stock"
+                  type="number"
+                  error={!!errors.stock}
+                  helperText={errors.stock?.message}
+                  fullWidth
+                  required
+                  slotProps={{
+                    htmlInput: { min: 0, step: 1 },
+                  }}
+                  onChange={(e) => onChange(parseInt(e.target.value, 10) || 0)}
+                />
+              )}
+            />
+
+            {/* Description - spans full width */}
+            <Box sx={{ gridColumn: '1 / -1' }}>
               <Controller
-                name="stock"
+                name="description"
                 control={control}
-                render={({ field: { onChange, ...field } }) => (
+                render={({ field }) => (
                   <TextField
                     {...field}
-                    label="Stock"
-                    type="number"
-                    error={!!errors.stock}
-                    helperText={errors.stock?.message}
+                    label="Description"
+                    error={!!errors.description}
+                    helperText={errors.description?.message}
                     fullWidth
-                    required
-                    slotProps={{
-                      htmlInput: { min: 0, step: 1 },
-                    }}
-                    onChange={(e) => onChange(parseInt(e.target.value, 10) || 0)}
+                    multiline
+                    rows={4}
                   />
                 )}
               />
             </Box>
 
-            {/* Description */}
-            <Controller
-              name="description"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Description"
-                  error={!!errors.description}
-                  helperText={errors.description?.message}
-                  fullWidth
-                  multiline
-                  rows={4}
-                />
-              )}
-            />
+            {/* Divider - spans full width */}
+            <Box sx={{ gridColumn: '1 / -1' }}>
+              <Divider />
+            </Box>
 
-            <Divider />
-
-            {/* Action Buttons */}
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+            {/* Action Buttons - spans full width */}
+            <Box sx={{ gridColumn: '1 / -1', display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
               <Button
                 variant="outlined"
                 onClick={handleBack}
