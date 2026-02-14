@@ -278,8 +278,9 @@ export default function ProductsPage() {
     { field: 'actions' },
   ];
 
-  // Optimistic navigation - navigate immediately without waiting for lock
+  // Optimistic navigation - prefetch and navigate immediately
   const handleEditClick = (row: any) => {
+    prefetchProduct(row.id);
     navigateTo(`/products/edit/${row.id}`);
   };
 
