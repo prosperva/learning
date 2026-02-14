@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -25,7 +25,7 @@ import {
 import { ArrowBack as ArrowBackIcon, Save as SaveIcon, OpenInNew as OpenInNewIcon } from '@mui/icons-material';
 import { useGridManagement } from '@/hooks/useGridManagement';
 import { useProduct, useUpdateProduct, type UpdateProductInput } from '@/hooks/useProducts';
-import { LockService } from '@/lib/lockService';
+// import { LockService } from '@/lib/lockService';
 
 // Form validation schema
 const productSchema = z.object({
@@ -57,8 +57,8 @@ const statuses = [
 export default function ProductEditPage() {
   const params = useParams();
   const id = Number(params.id);
-  const currentUser = 'demo_user@example.com'; // In production, get from auth context
-  const lockReleasedRef = useRef(false);
+  // const currentUser = 'demo_user@example.com'; // In production, get from auth context
+  // const lockReleasedRef = useRef(false);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
 
   // Use grid management hook for navigation
@@ -66,46 +66,42 @@ export default function ProductEditPage() {
     gridId: 'products-grid',
   });
 
-  // Release lock helper
-  const releaseLock = useCallback(async () => {
-    if (!lockReleasedRef.current && id) {
-      lockReleasedRef.current = true;
-      await LockService.releaseLock('products', id.toString(), currentUser);
-    }
-  }, [id, currentUser]);
+  // // Release lock helper
+  // const releaseLock = useCallback(async () => {
+  //   if (!lockReleasedRef.current && id) {
+  //     lockReleasedRef.current = true;
+  //     await LockService.releaseLock('products', id.toString(), currentUser);
+  //   }
+  // }, [id, currentUser]);
 
-  // Release lock on unmount
-  useEffect(() => {
-    return () => {
-      releaseLock();
-    };
-  }, [releaseLock]);
+  // // Release lock on unmount
+  // useEffect(() => {
+  //   return () => {
+  //     releaseLock();
+  //   };
+  // }, [releaseLock]);
 
-  // Heartbeat to keep lock alive while editing
-  useEffect(() => {
-    if (!id) return;
+  // // Heartbeat to keep lock alive while editing
+  // useEffect(() => {
+  //   if (!id) return;
+  //   const heartbeat = setInterval(async () => {
+  //     await LockService.refreshLock('products', id.toString(), currentUser);
+  //   }, 30000);
+  //   return () => clearInterval(heartbeat);
+  // }, [id, currentUser]);
 
-    const heartbeat = setInterval(async () => {
-      await LockService.refreshLock('products', id.toString(), currentUser);
-    }, 30000); // Refresh every 30 seconds
-
-    return () => clearInterval(heartbeat);
-  }, [id, currentUser]);
-
-  // Handle browser close/refresh - release lock
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      // Use sendBeacon for reliable delivery on page unload
-      navigator.sendBeacon('/api/locks/release', JSON.stringify({
-        tableName: 'products',
-        rowId: id.toString(),
-        userId: currentUser
-      }));
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [id, currentUser]);
+  // // Handle browser close/refresh - release lock
+  // useEffect(() => {
+  //   const handleBeforeUnload = () => {
+  //     navigator.sendBeacon('/api/locks/release', JSON.stringify({
+  //       tableName: 'products',
+  //       rowId: id.toString(),
+  //       userId: currentUser
+  //     }));
+  //   };
+  //   window.addEventListener('beforeunload', handleBeforeUnload);
+  //   return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  // }, [id, currentUser]);
 
   // Fetch product data using React Query
   const {
@@ -158,8 +154,6 @@ export default function ProductEditPage() {
         id,
         data: data as UpdateProductInput,
       });
-      // Release lock and return to grid on success
-      await releaseLock();
       returnToGrid();
     } catch (error) {
       // Error is handled by mutation state
@@ -168,9 +162,7 @@ export default function ProductEditPage() {
   };
 
   // Handle back navigation
-  const handleBack = async () => {
-    // Release lock before navigating back
-    await releaseLock();
+  const handleBack = () => {
     returnToGrid();
   };
 

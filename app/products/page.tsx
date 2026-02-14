@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   Container,
   Typography,
@@ -39,9 +39,9 @@ import {
   Visibility as ViewIcon,
   Add as AddIcon,
   Refresh as RefreshIcon,
-  Lock as LockIcon,
+  // Lock as LockIcon,
 } from '@mui/icons-material';
-import { LockService } from '@/lib/lockService';
+// import { LockService } from '@/lib/lockService';
 import { DataGrid, GridColDef, GridPaginationModel, GridSortModel, GridRowSelectionModel } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
 import { DynamicSearch, SavedSearch, ViewMode, ReportFormat, ReportOption } from '@/components/DynamicSearch';
@@ -73,7 +73,7 @@ export default function ProductsPage() {
   // ========================================
   const enableExport = true;
   const enableEditView = true;
-  const currentUser = 'demo_user@example.com'; // In production, get from auth context
+  // const currentUser = 'demo_user@example.com'; // In production, get from auth context
 
   // Report options for the view mode dropdown
   // Each report type can have different export formats available
@@ -156,7 +156,7 @@ export default function ProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
   // Track locked rows: { rowId: { lockedBy: string, lockedAt: Date } }
-  const [lockedRows, setLockedRows] = useState<Record<number, { lockedBy: string; lockedAt: Date }>>({});
+  // const [lockedRows, setLockedRows] = useState<Record<number, { lockedBy: string; lockedAt: Date }>>({});
 
   // Build query params directly from Zustand state (single source of truth)
   const queryParams: ProductsQueryParams = {
@@ -206,30 +206,30 @@ export default function ProductsPage() {
   // Prefetch hook for hover
   const prefetchProduct = usePrefetchProduct();
 
-  // Sync locks from database on mount and periodically
-  useEffect(() => {
-    const syncLocks = async () => {
-      const locks = await LockService.getTableLocks('products');
-      const lockMap: Record<number, { lockedBy: string; lockedAt: Date }> = {};
+  // // Sync locks from database on mount and periodically
+  // useEffect(() => {
+  //   const syncLocks = async () => {
+  //     const locks = await LockService.getTableLocks('products');
+  //     const lockMap: Record<number, { lockedBy: string; lockedAt: Date }> = {};
 
-      locks.forEach(lock => {
-        lockMap[Number(lock.rowId)] = {
-          lockedBy: lock.lockedBy,
-          lockedAt: new Date(lock.lockedAt)
-        };
-      });
+  //     locks.forEach(lock => {
+  //       lockMap[Number(lock.rowId)] = {
+  //         lockedBy: lock.lockedBy,
+  //         lockedAt: new Date(lock.lockedAt)
+  //       };
+  //     });
 
-      setLockedRows(lockMap);
-    };
+  //     setLockedRows(lockMap);
+  //   };
 
-    // Initial sync
-    syncLocks();
+  //   // Initial sync
+  //   syncLocks();
 
-    // Sync every 10 seconds
-    const interval = setInterval(syncLocks, 10000);
+  //   // Sync every 10 seconds
+  //   const interval = setInterval(syncLocks, 10000);
 
-    return () => clearInterval(interval);
-  }, []);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   // Grid columns definition
   const baseColumns: ResponsiveGridColDef[] = [
@@ -278,30 +278,8 @@ export default function ProductsPage() {
     { field: 'actions' },
   ];
 
-  // Handle edit with lock acquisition
-  const handleEditClick = async (row: any) => {
-    // Check if row is locked by another user
-    const lock = lockedRows[row.id];
-    if (lock && lock.lockedBy !== currentUser) {
-      alert(`This record is currently being edited by ${lock.lockedBy}.\nPlease try again later.`);
-      return;
-    }
-
-    // Try to acquire lock from database
-    const lockResult = await LockService.acquireLock('products', row.id.toString(), currentUser);
-
-    if (!lockResult.success) {
-      alert(`This record is currently being edited by ${lockResult.lockedBy}.\nPlease try again later.`);
-      return;
-    }
-
-    // Update local lock state
-    setLockedRows(prev => ({
-      ...prev,
-      [row.id]: { lockedBy: currentUser, lockedAt: new Date() }
-    }));
-
-    // Navigate to edit page
+  // Optimistic navigation - navigate immediately without waiting for lock
+  const handleEditClick = (row: any) => {
     navigateTo(`/products/edit/${row.id}`);
   };
 
@@ -316,28 +294,8 @@ export default function ProductsPage() {
           sortable: false,
           filterable: false,
           renderCell: (params) => {
-            const lock = lockedRows[params.row.id];
-            const isLockedByOther = lock && lock.lockedBy !== currentUser;
-            const isLockedByMe = lock && lock.lockedBy === currentUser;
-
             return (
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', height: '100%' }}>
-                {isLockedByOther && (
-                  <Chip
-                    icon={<LockIcon />}
-                    label={`Locked by ${lock.lockedBy.split('@')[0]}`}
-                    size="small"
-                    color="warning"
-                  />
-                )}
-                {isLockedByMe && (
-                  <Chip
-                    icon={<LockIcon />}
-                    label="Editing"
-                    size="small"
-                    color="info"
-                  />
-                )}
                 <Button
                   size="small"
                   variant="outlined"
@@ -349,7 +307,7 @@ export default function ProductsPage() {
                 >
                   View
                 </Button>
-                <Tooltip title={isLockedByOther ? `Locked by ${lock.lockedBy}` : 'Edit product'}>
+                <Tooltip title="Edit product">
                   <span>
                     <Button
                       size="small"
@@ -360,7 +318,6 @@ export default function ProductsPage() {
                         handleEditClick(params.row);
                       }}
                       onMouseEnter={() => prefetchProduct(params.row.id)}
-                      disabled={isLockedByOther}
                     >
                       Edit
                     </Button>
