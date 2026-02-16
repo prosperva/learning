@@ -139,3 +139,69 @@ export async function deleteProduct(id: number): Promise<void> {
     throw new Error(error.message || 'Failed to delete product');
   }
 }
+
+// Attachment types
+export interface Attachment {
+  id: string;
+  productId: number;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  uploadedAt: string;
+  url: string;
+}
+
+export interface AttachmentsResponse {
+  attachments: Attachment[];
+}
+
+// Attachment API client functions
+const ATTACHMENTS_URL = (productId: number) => `${API_BASE}/${productId}/attachments`;
+
+export async function fetchAttachments(productId: number): Promise<AttachmentsResponse> {
+  const response = await fetch(ATTACHMENTS_URL(productId), {
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch attachments: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+export async function uploadAttachment(
+  productId: number,
+  file: File
+): Promise<{ attachment: Attachment }> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(ATTACHMENTS_URL(productId), {
+    method: 'POST',
+    credentials: 'include',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || 'Failed to upload attachment');
+  }
+
+  return response.json();
+}
+
+export async function deleteAttachment(
+  productId: number,
+  attachmentId: string
+): Promise<void> {
+  const response = await fetch(`${ATTACHMENTS_URL(productId)}/${attachmentId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || 'Failed to delete attachment');
+  }
+}

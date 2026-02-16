@@ -25,6 +25,7 @@ import {
 import { ArrowBack as ArrowBackIcon, Save as SaveIcon, OpenInNew as OpenInNewIcon } from '@mui/icons-material';
 import { useGridManagement } from '@/hooks/useGridManagement';
 import { useProduct, useUpdateProduct, type UpdateProductInput } from '@/hooks/useProducts';
+import AttachmentsSection from '@/components/AttachmentsSection';
 // import { LockService } from '@/lib/lockService';
 
 // Form validation schema
@@ -392,6 +393,9 @@ export default function ProductEditPage() {
           </Box>
         </form>
       </Paper>
+
+      {/* Attachments */}
+      <AttachmentsSection productId={id} />
 
       {/* Product Info */}
       {product && (
