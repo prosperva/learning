@@ -4,12 +4,14 @@ export interface FetchDropdownOptionsParams {
   url: string;
   labelField?: string;
   valueField?: string;
+  extraFields?: string[];
 }
 
 export async function fetchDropdownOptions({
   url,
   labelField = 'label',
   valueField = 'value',
+  extraFields,
 }: FetchDropdownOptionsParams): Promise<DropdownOption[]> {
   const response = await fetch(url, {
     credentials: 'include',
@@ -33,6 +35,12 @@ export async function fetchDropdownOptions({
   return data.map((item: any) => ({
     label: item[labelField],
     value: item[valueField],
+    ...(extraFields && {
+      extra: extraFields.reduce((acc, field) => {
+        acc[field] = item[field];
+        return acc;
+      }, {} as Record<string, any>),
+    }),
   }));
 }
 

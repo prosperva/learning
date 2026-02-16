@@ -3,6 +3,7 @@ export type FieldType = 'text' | 'number' | 'dropdown' | 'checkbox' | 'radio' | 
 export interface DropdownOption {
   label: string;
   value?: string | number; // Optional - if missing, selecting this option clears the field
+  extra?: Record<string, any>; // Additional fields from the source data
 }
 
 export type FormMode = 'search' | 'edit';
