@@ -12,7 +12,7 @@ import {
 
 export interface DropdownOption {
   label: string;
-  value: string | number;
+  value?: string | number; // Optional - if missing, selecting this option clears the field
 }
 
 export interface SearchableMultiSelectProps {
@@ -142,18 +142,21 @@ export const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
     }
   };
 
+  // Filter out valueless options (like "-- Any --") for selection tracking
+  const valuedOptions = options.filter((opt) => opt.value !== undefined);
+
   // Find selected option objects
-  const selectedOptions = options.filter((opt) => value.includes(opt.value));
+  const selectedOptions = valuedOptions.filter((opt) => value.includes(opt.value!));
 
   const handleSelectAll = () => {
-    onChange(options.map(opt => opt.value));
+    onChange(valuedOptions.map(opt => opt.value!));
   };
 
   const handleClearAll = () => {
     onChange([]);
   };
 
-  const allSelected = value.length === options.length && options.length > 0;
+  const allSelected = value.length === valuedOptions.length && valuedOptions.length > 0;
 
   return (
     <>
@@ -162,10 +165,14 @@ export const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
         options={options}
         value={selectedOptions}
         onChange={(_, newValue) => {
-          onChange(newValue.map((opt) => opt.value));
+          const hasValueless = newValue.some(opt => opt.value === undefined);
+          onChange(hasValueless ? [] : newValue.map((opt) => opt.value!));
         }}
         getOptionLabel={(option) => option.label}
-        isOptionEqualToValue={(option, value) => option.value === value.value}
+        isOptionEqualToValue={(option, value) => {
+          if (option.value === undefined && value.value === undefined) return true;
+          return option.value === value.value;
+        }}
         disabled={disabled || isLoading}
         loading={isLoading}
         renderInput={(params) => (
@@ -192,7 +199,7 @@ export const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
           value.map((option, index) => (
             <Chip
               {...getTagProps({ index })}
-              key={option.value}
+              key={option.value ?? option.label}
               label={option.label}
               size="small"
             />

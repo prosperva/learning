@@ -325,7 +325,12 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
       );
 
     case 'multiselect':
-      const valuedOptions = options.filter(opt => opt.value !== undefined);
+      // Give valueless options (like "-- Any --") a sentinel value so MUI Autocomplete renders them
+      const CLEAR_VALUE = '__clear__' as const;
+      const multiselectOptions = options.map(opt =>
+        opt.value === undefined ? { ...opt, value: CLEAR_VALUE } : opt
+      );
+      const valuedOptions = multiselectOptions.filter(opt => opt.value !== CLEAR_VALUE);
       const allOptionValues = valuedOptions.map(opt => opt.value);
       const allSelected = value?.length === valuedOptions.length;
       const selectedOptions = valuedOptions.filter((opt) => (value || []).includes(opt.value));
@@ -344,11 +349,11 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
             <Autocomplete
               multiple
               size="small"
-              options={options}
+              options={multiselectOptions}
               value={selectedOptions}
               onChange={(_, newValue) => {
-                const hasValueless = newValue.some(opt => opt.value === undefined);
-                handleChange(hasValueless ? [] : newValue.map((opt) => opt.value));
+                const hasClear = newValue.some(opt => opt.value === CLEAR_VALUE);
+                handleChange(hasClear ? [] : newValue.map((opt) => opt.value));
               }}
               disabled={isDisabled}
               getOptionLabel={(option) => option.label}
