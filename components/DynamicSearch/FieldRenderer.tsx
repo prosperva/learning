@@ -330,10 +330,15 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
       const multiselectOptions = options.map(opt =>
         opt.value === undefined ? { ...opt, value: CLEAR_VALUE } : opt
       );
+      const clearOption = multiselectOptions.find(opt => opt.value === CLEAR_VALUE);
       const valuedOptions = multiselectOptions.filter(opt => opt.value !== CLEAR_VALUE);
       const allOptionValues = valuedOptions.map(opt => opt.value);
       const allSelected = value?.length === valuedOptions.length;
-      const selectedOptions = valuedOptions.filter((opt) => (value || []).includes(opt.value));
+
+      // Show "-- Any --" chip when value is empty, otherwise show real selections
+      const selectedOptions = clearOption && (!value || value.length === 0)
+        ? [clearOption]
+        : valuedOptions.filter((opt) => (value || []).includes(opt.value));
 
       const handleSelectAll = () => {
         handleChange(allOptionValues);
@@ -353,7 +358,13 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
               value={selectedOptions}
               onChange={(_, newValue) => {
                 const hasClear = newValue.some(opt => opt.value === CLEAR_VALUE);
-                handleChange(hasClear ? [] : newValue.map((opt) => opt.value));
+                if (hasClear && value && value.length > 0) {
+                  // User clicked "-- Any --" while real options were selected → clear all
+                  handleChange([]);
+                } else {
+                  // Selecting/deselecting real options (filter out the clear option)
+                  handleChange(newValue.filter(opt => opt.value !== CLEAR_VALUE).map(opt => opt.value));
+                }
               }}
               disabled={isDisabled}
               getOptionLabel={(option) => option.label}
