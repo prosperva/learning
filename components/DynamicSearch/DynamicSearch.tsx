@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Button,
@@ -183,9 +183,14 @@ export const DynamicSearch: React.FC<DynamicSearchProps> = ({
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [selectedViewMode, setSelectedViewMode] = useState<ViewMode>(defaultViewMode);
 
-  // Update form values when initialValues changes (e.g., when editing different rows)
+  // Update form values when initialValues actually changes (deep comparison to avoid resets from reference changes)
+  const prevInitialValuesRef = useRef<string | null>(null);
   useEffect(() => {
     if (initialValues) {
+      const serialized = JSON.stringify(initialValues);
+      if (serialized === prevInitialValuesRef.current) return; // Skip if content hasn't changed
+      prevInitialValuesRef.current = serialized;
+
       const values: Record<string, any> = {};
       fields.forEach((field) => {
         if (field.defaultValue !== undefined) {
