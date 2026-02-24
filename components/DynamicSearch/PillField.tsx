@@ -126,19 +126,24 @@ export const PillField: React.FC<PillFieldProps> = ({
     }
   };
 
+  const expandAndApply = () => {
+    setInternalError('');
+    const newValues = processInput(inputText);
+    if (newValues.length > 0) {
+      onChange(name, newValues);
+    }
+  };
+
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Enter') {
       event.preventDefault();
-      setInternalError('');
+      expandAndApply();
+    }
+  };
 
-      // Expand ranges when user presses Enter
-      // Keep the original input text (with ranges) in the textarea
-      // Only expand for the value/chips display
-      const newValues = processInput(inputText);
-      if (newValues.length > 0) {
-        onChange(name, newValues);
-        // Don't update inputText - keep user's original input with ranges
-      }
+  const handleBlur = () => {
+    if (inputText.trim()) {
+      expandAndApply();
     }
   };
 
@@ -185,6 +190,7 @@ export const PillField: React.FC<PillFieldProps> = ({
         value={inputText}
         onChange={handleTextChange}
         onKeyDown={handleKeyDown}
+        onBlur={handleBlur}
         placeholder={placeholder || (allowRanges ? 'Enter comma-separated values or ranges (e.g., 100-150, 178). Press Enter to expand ranges.' : 'Enter comma-separated values')}
         variant="outlined"
         error={!!error}
