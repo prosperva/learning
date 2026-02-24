@@ -71,9 +71,8 @@ export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
   const [loading, setLoading] = useState(false);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
-  // Use static options if provided and has real selectable options (not just valueless placeholders like "-- Any --")
-  const hasStaticOptions = staticOptions && staticOptions.some(opt => opt.value !== undefined);
-  const options = hasStaticOptions ? staticOptions : apiOptions;
+  // Prefer staticOptions (from parent/React Query) when provided, otherwise use internal API fetch
+  const options = staticOptions !== undefined ? staticOptions : apiOptions;
 
   // Sync selectedValue with value prop when it changes
   useEffect(() => {
@@ -84,12 +83,12 @@ export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
     }
   }, [value, allowMultiple]);
 
-  // Fetch data from API on mount when no static options are provided
+  // Only fetch from API when no staticOptions prop is provided and apiUrl is set
   useEffect(() => {
-    if (apiUrl && !hasStaticOptions && !hasLoadedOnce) {
+    if (apiUrl && staticOptions === undefined && !hasLoadedOnce) {
       fetchOptions();
     }
-  }, [apiUrl, hasStaticOptions, hasLoadedOnce]);
+  }, [apiUrl, staticOptions, hasLoadedOnce]);
 
   const fetchOptions = async () => {
     if (!apiUrl) return;
