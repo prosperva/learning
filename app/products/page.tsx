@@ -44,8 +44,8 @@ import {
 // import { LockService } from '@/lib/lockService';
 import { DataGrid, GridColDef, GridPaginationModel, GridSortModel, GridRowSelectionModel } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
-import { DynamicSearch, SavedSearch, ViewMode, ReportFormat, ReportOption } from '@/components/DynamicSearch';
-import { productsSearchFields } from '../fieldConfigs/productsSearchFields';
+import { DynamicSearch, SavedSearch, ViewMode, ReportFormat, ReportOption, FieldConfig } from '@/components/DynamicSearch';
+import { useProductsSearchFields } from '../fieldConfigs/productsSearchFields';
 import { useGridManagement } from '@/hooks/useGridManagement';
 import { useProducts, useAllProducts, usePrefetchProduct, type ProductsQueryParams } from '@/hooks/useProducts';
 import {
@@ -65,12 +65,13 @@ import {
 type ResponsiveGridColDef = GridColDef & { hideBelow?: Breakpoint };
 
 // Search field configurations - similar to app/page.tsx
-const searchFields = productsSearchFields;
+// searchFields is now loaded inside the component via useProductsSearchFields hook
 
 export default function ProductsPage() {
   // ========================================
   // CONFIGURATION OPTIONS
   // ========================================
+  const { searchFields } = useProductsSearchFields();
   const enableExport = true;
   const enableEditView = true;
   // const currentUser = 'demo_user@example.com'; // In production, get from auth context
@@ -1153,7 +1154,7 @@ export default function ProductsPage() {
           {selectedProduct && (
             <Box sx={{ pt: 2 }}>
               <DynamicSearch
-                fields={searchFields.map((f) => ({ ...f, disabled: true }))}
+                fields={searchFields.map((f: FieldConfig) => ({ ...f, disabled: true }))}
                 onSearch={() => {}}
                 initialValues={selectedProduct}
                 searchButtonText="Edit"
