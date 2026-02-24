@@ -71,8 +71,9 @@ export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
   const [loading, setLoading] = useState(false);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
-  // Use static options if provided, otherwise use API options
-  const options = staticOptions || apiOptions;
+  // Use static options if provided and non-empty, otherwise use API options
+  const hasStaticOptions = staticOptions && staticOptions.length > 0;
+  const options = hasStaticOptions ? staticOptions : apiOptions;
 
   // Sync selectedValue with value prop when it changes
   useEffect(() => {
@@ -83,19 +84,19 @@ export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
     }
   }, [value, allowMultiple]);
 
-  // Fetch data from API when modal opens (lazy loading)
+  // Fetch data from API on mount when no static options are provided
   useEffect(() => {
-    if (modalOpen && apiUrl && !staticOptions && !hasLoadedOnce) {
+    if (apiUrl && !hasStaticOptions && !hasLoadedOnce) {
       fetchOptions();
     }
-  }, [modalOpen, apiUrl, staticOptions, hasLoadedOnce]);
+  }, [apiUrl, hasStaticOptions, hasLoadedOnce]);
 
   const fetchOptions = async () => {
     if (!apiUrl) return;
 
     setLoading(true);
     try {
-      const response = await fetch(apiUrl);
+      const response = await fetch(apiUrl, { credentials: 'include' });
       const data = await response.json();
 
       // Map API response to DropdownOption format
