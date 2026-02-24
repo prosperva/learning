@@ -32,6 +32,11 @@ export async function fetchDropdownOptions({
     throw new Error(`Invalid response from ${url}: expected array`);
   }
 
+  // DEBUG: remove after fixing - log first item to see available fields
+  if (data.length > 0) {
+    console.log(`[fetchDropdownOptions ${url}] sample item keys:`, Object.keys(data[0]), 'labelField:', labelField, 'valueField:', valueField, 'first item:', data[0]);
+  }
+
   return data.map((item: any) => ({
     label: item[labelField],
     value: item[valueField],

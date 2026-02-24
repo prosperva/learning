@@ -602,6 +602,8 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
       );
 
     case 'modal-select':
+      // DEBUG: remove after fixing
+      console.log(`[FieldRenderer ${field.name}] field.options:`, field.options, 'local options:', options);
       return (
         <FieldWrapper>
           <ModalSelectField
