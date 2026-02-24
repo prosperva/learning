@@ -71,8 +71,8 @@ export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
   const [loading, setLoading] = useState(false);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
-  // Use static options if provided and non-empty, otherwise use API options
-  const hasStaticOptions = staticOptions && staticOptions.length > 0;
+  // Use static options if provided and has real selectable options (not just valueless placeholders like "-- Any --")
+  const hasStaticOptions = staticOptions && staticOptions.some(opt => opt.value !== undefined);
   const options = hasStaticOptions ? staticOptions : apiOptions;
 
   // Sync selectedValue with value prop when it changes
