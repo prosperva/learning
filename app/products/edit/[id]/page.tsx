@@ -21,8 +21,12 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  List,
+  ListItemButton,
+  ListItemText,
+  InputAdornment,
 } from '@mui/material';
-import { ArrowBack as ArrowBackIcon, Save as SaveIcon, OpenInNew as OpenInNewIcon } from '@mui/icons-material';
+import { ArrowBack as ArrowBackIcon, Save as SaveIcon, OpenInNew as OpenInNewIcon, Search as SearchIcon } from '@mui/icons-material';
 import { useGridManagement } from '@/hooks/useGridManagement';
 import { useProduct, useUpdateProduct, type UpdateProductInput } from '@/hooks/useProducts';
 import AttachmentsSection from '@/components/AttachmentsSection';
@@ -61,6 +65,7 @@ export default function ProductEditPage() {
   // const currentUser = 'demo_user@example.com'; // In production, get from auth context
   // const lockReleasedRef = useRef(false);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState('');
 
   // Use grid management hook for navigation
   const { returnToGrid } = useGridManagement({
@@ -121,6 +126,7 @@ export default function ProductEditPage() {
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors, isDirty, isSubmitting },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -256,25 +262,18 @@ export default function ProductEditPage() {
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    select
                     label="Category"
                     error={!!errors.category}
                     helperText={errors.category?.message}
                     fullWidth
                     required
-                  >
-                    {categories.map((opt) => (
-                      <MenuItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </MenuItem>
-                    ))}
-                  </TextField>
+                    disabled
+                  />
                 )}
               />
               <Button
                 variant="outlined"
-                onClick={() => setCategoryModalOpen(true)}
-                disabled={!watch('category')}
+                onClick={() => { setCategoryModalOpen(true); setCategoryFilter(''); }}
                 startIcon={<OpenInNewIcon />}
                 sx={{ whiteSpace: 'nowrap', height: '56px' }}
               >
@@ -408,19 +407,48 @@ export default function ProductEditPage() {
           </Typography>
         </Paper>
       )}
-      {/* Category Modal */}
-      <Dialog open={categoryModalOpen} onClose={() => setCategoryModalOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Category Details</DialogTitle>
-        <DialogContent>
-          <Typography variant="body1" sx={{ mt: 1 }}>
-            Category ID: <strong>{watch('category')}</strong>
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            {categories.find(c => c.value === watch('category'))?.label}
-          </Typography>
+      {/* Category Picker Modal */}
+      <Dialog open={categoryModalOpen} onClose={() => setCategoryModalOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Move to Category</DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          <Box sx={{ px: 2, pt: 2, pb: 1 }}>
+            <TextField
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              placeholder="Filter categories..."
+              fullWidth
+              size="small"
+              autoFocus
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+          </Box>
+          <List sx={{ maxHeight: 300, overflow: 'auto' }}>
+            {categories
+              .filter((c) => c.label.toLowerCase().includes(categoryFilter.toLowerCase()))
+              .map((cat) => (
+                <ListItemButton
+                  key={cat.value}
+                  selected={watch('category') === cat.value}
+                  onClick={() => {
+                    setValue('category', cat.value, { shouldDirty: true });
+                    setCategoryModalOpen(false);
+                  }}
+                >
+                  <ListItemText primary={cat.label} secondary={cat.value} />
+                </ListItemButton>
+              ))}
+          </List>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCategoryModalOpen(false)}>Close</Button>
+          <Button onClick={() => setCategoryModalOpen(false)}>Cancel</Button>
         </DialogActions>
       </Dialog>
     </Container>
