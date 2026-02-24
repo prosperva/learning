@@ -96,7 +96,16 @@ export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
     setLoading(true);
     try {
       const response = await fetch(apiUrl, { credentials: 'include' });
-      const data = await response.json();
+      const responseData = await response.json();
+
+      // Handle both array responses and { data: [...] } wrapped responses
+      const data = Array.isArray(responseData) ? responseData : (responseData.data || responseData);
+
+      if (!Array.isArray(data)) {
+        console.error(`Invalid API response for ${name}: expected array`);
+        setApiOptions([]);
+        return;
+      }
 
       // Map API response to DropdownOption format
       const labelField = apiLabelField || 'label';
