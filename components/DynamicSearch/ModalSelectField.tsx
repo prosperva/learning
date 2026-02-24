@@ -74,9 +74,6 @@ export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
   // Prefer staticOptions (from parent/React Query) when provided, otherwise use internal API fetch
   const options = staticOptions !== undefined ? staticOptions : apiOptions;
 
-  // DEBUG: remove after fixing
-  console.log(`[ModalSelect ${name}] staticOptions:`, staticOptions?.length, 'apiOptions:', apiOptions.length, 'options:', options.length, options);
-
   // Sync selectedValue with value prop when it changes
   useEffect(() => {
     if (allowMultiple) {
