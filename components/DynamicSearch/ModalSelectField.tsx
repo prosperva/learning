@@ -74,6 +74,9 @@ export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
   // Prefer staticOptions (from parent/React Query) when provided, otherwise use internal API fetch
   const options = staticOptions !== undefined ? staticOptions : apiOptions;
 
+  // DEBUG: remove after fixing
+  console.log(`[ModalSelect ${name}] staticOptions:`, staticOptions?.length, 'apiOptions:', apiOptions.length, 'options:', options.length, options);
+
   // Sync selectedValue with value prop when it changes
   useEffect(() => {
     if (allowMultiple) {
@@ -138,11 +141,12 @@ export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
     return selectedOption ? selectedOption.label : '';
   }, [value, options, allowMultiple]);
 
-  // Filter options based on search text
+  // Filter options: exclude valueless entries (e.g. "-- Any --") and apply search text
   const filteredOptions = useMemo(() => {
-    if (!filterText.trim()) return options;
+    const selectable = options.filter((opt) => opt.value !== undefined);
+    if (!filterText.trim()) return selectable;
     const searchLower = filterText.toLowerCase();
-    return options.filter((opt) =>
+    return selectable.filter((opt) =>
       opt.label.toLowerCase().includes(searchLower)
     );
   }, [filterText, options]);
@@ -312,7 +316,7 @@ export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
                 </Box>
               </ListItem>
             ) : filteredOptions.length > 0 ? (
-              filteredOptions.filter(opt => opt.value !== undefined).map((option) => (
+              filteredOptions.map((option) => (
                 <ListItem key={option.value} disablePadding>
                   <ListItemButton
                     selected={isSelected(option.value!)}
