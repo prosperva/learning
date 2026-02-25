@@ -119,8 +119,8 @@ export default function ProductEditPage() {
     control,
     handleSubmit,
     reset,
-    watch,
     setValue,
+    getValues,
     formState: { errors, isDirty, isSubmitting },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -233,7 +233,7 @@ export default function ProductEditPage() {
         <form onSubmit={handleSubmit(onSubmit)}>
           <Box sx={{ maxWidth: { xs: '100%', sm: '80%', md: '60%', lg: '45%' }, display: 'flex', flexDirection: 'column', gap: 3 }}>
             {/* Product Name */}
-            <Controller
+            {/* <Controller
               name="name"
               control={control}
               render={({ field }) => (
@@ -246,7 +246,7 @@ export default function ProductEditPage() {
                   required
                 />
               )}
-            />
+            /> */}
 
             {/* Category */}
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
@@ -432,7 +432,7 @@ export default function ProductEditPage() {
                 return (
                   <ListItemButton
                     key={catValue}
-                    selected={watch('category') === catValue}
+                    selected={getValues('category') === catValue}
                     onClick={() => {
                       setValue('category', catValue, { shouldDirty: true });
                       setCategoryModalOpen(false);
