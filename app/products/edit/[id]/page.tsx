@@ -427,18 +427,21 @@ export default function ProductEditPage() {
           <List sx={{ maxHeight: 300, overflow: 'auto' }}>
             {categories
               .filter((c) => c.label.toLowerCase().includes(categoryFilter.toLowerCase()))
-              .map((cat) => (
-                <ListItemButton
-                  key={cat.value}
-                  selected={watch('category') === String(cat.value ?? '')}
-                  onClick={() => {
-                    setValue('category', String(cat.value ?? ''), { shouldDirty: true });
-                    setCategoryModalOpen(false);
-                  }}
-                >
-                  <ListItemText primary={cat.label} secondary={cat.value} />
-                </ListItemButton>
-              ))}
+              .map((cat) => {
+                const catValue = String(cat.value ?? '');
+                return (
+                  <ListItemButton
+                    key={catValue}
+                    selected={watch('category') === catValue}
+                    onClick={() => {
+                      setValue('category', catValue, { shouldDirty: true });
+                      setCategoryModalOpen(false);
+                    }}
+                  >
+                    <ListItemText primary={cat.label} secondary={catValue} />
+                  </ListItemButton>
+                );
+              })}
           </List>
         </DialogContent>
         <DialogActions>
