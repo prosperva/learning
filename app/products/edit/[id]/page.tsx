@@ -29,6 +29,7 @@ import {
 import { ArrowBack as ArrowBackIcon, Save as SaveIcon, OpenInNew as OpenInNewIcon, Search as SearchIcon } from '@mui/icons-material';
 import { useGridManagement } from '@/hooks/useGridManagement';
 import { useProduct, useUpdateProduct, type UpdateProductInput } from '@/hooks/useProducts';
+import { useCategories } from '@/hooks/useDropdownOptions';
 import AttachmentsSection from '@/components/AttachmentsSection';
 // import { LockService } from '@/lib/lockService';
 
@@ -44,14 +45,6 @@ const productSchema = z.object({
 
 type ProductFormData = z.infer<typeof productSchema>;
 
-// Category options
-const categories = [
-  { value: 'electronics', label: 'Electronics' },
-  { value: 'clothing', label: 'Clothing' },
-  { value: 'home', label: 'Home & Garden' },
-  { value: 'sports', label: 'Sports' },
-];
-
 // Status options
 const statuses = [
   { value: 'active', label: 'Active' },
@@ -66,6 +59,7 @@ export default function ProductEditPage() {
   // const lockReleasedRef = useRef(false);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState('');
+  const { data: categories = [] } = useCategories();
 
   // Use grid management hook for navigation
   const { returnToGrid } = useGridManagement({
@@ -237,7 +231,7 @@ export default function ProductEditPage() {
       {/* Edit Form */}
       <Paper elevation={2} sx={{ p: 3 }}>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <Box sx={{ maxWidth: { xs: '100%', sm: '60%', md: '40%', lg: '25%' }, display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box sx={{ maxWidth: { xs: '100%', sm: '80%', md: '60%', lg: '45%' }, display: 'flex', flexDirection: 'column', gap: 3 }}>
             {/* Product Name */}
             <Controller
               name="name"
@@ -363,6 +357,9 @@ export default function ProductEditPage() {
               )}
             />
 
+            {/* Attachments */}
+            <AttachmentsSection productId={id} />
+
             <Divider />
 
             {/* Action Buttons */}
@@ -392,9 +389,6 @@ export default function ProductEditPage() {
           </Box>
         </form>
       </Paper>
-
-      {/* Attachments */}
-      <AttachmentsSection productId={id} />
 
       {/* Product Info */}
       {product && (
@@ -436,9 +430,9 @@ export default function ProductEditPage() {
               .map((cat) => (
                 <ListItemButton
                   key={cat.value}
-                  selected={watch('category') === cat.value}
+                  selected={watch('category') === String(cat.value ?? '')}
                   onClick={() => {
-                    setValue('category', cat.value, { shouldDirty: true });
+                    setValue('category', String(cat.value ?? ''), { shouldDirty: true });
                     setCategoryModalOpen(false);
                   }}
                 >
