@@ -25,6 +25,8 @@ import {
   ListItemButton,
   ListItemText,
   InputAdornment,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon, Save as SaveIcon, OpenInNew as OpenInNewIcon, Search as SearchIcon } from '@mui/icons-material';
 import { useGridManagement } from '@/hooks/useGridManagement';
@@ -41,6 +43,7 @@ const productSchema = z.object({
   price: z.number().min(0, 'Price must be positive'),
   stock: z.number().int().min(0, 'Stock must be non-negative'),
   description: z.string().max(500, 'Description too long').optional(),
+  featured: z.boolean().optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -131,6 +134,7 @@ export default function ProductEditPage() {
       price: 0,
       stock: 0,
       description: '',
+      featured: false,
     },
   });
 
@@ -144,6 +148,7 @@ export default function ProductEditPage() {
         price: product.price,
         stock: product.stock,
         description: product.description,
+        featured: (product as any).featured ?? false,
       });
     }
   }, [product, reset]);
@@ -353,6 +358,24 @@ export default function ProductEditPage() {
                   fullWidth
                   multiline
                   rows={4}
+                />
+              )}
+            />
+
+            {/* Featured */}
+            <Controller
+              name="featured"
+              control={control}
+              render={({ field: { value, onChange, ...field } }) => (
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      {...field}
+                      checked={!!value}
+                      onChange={(e) => onChange(e.target.checked)}
+                    />
+                  }
+                  label="Featured Product"
                 />
               )}
             />
