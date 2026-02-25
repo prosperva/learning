@@ -354,6 +354,15 @@ export const DynamicSearch: React.FC<DynamicSearchProps> = ({
   };
 
   const handleReset = () => {
+    // Reset view mode to default
+    if (enableViewMode) {
+      const resetMode = ((reportOptions?.[0]?.id || availableViewModes[0]) as ViewMode) || defaultViewMode;
+      setSelectedViewMode(resetMode);
+      if (onViewModeChange) {
+        onViewModeChange(resetMode);
+      }
+    }
+
     // If onReset callback is provided, call it (e.g., to close a dialog)
     if (onReset) {
       onReset();
