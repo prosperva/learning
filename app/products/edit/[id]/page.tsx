@@ -31,7 +31,7 @@ import {
 import { ArrowBack as ArrowBackIcon, Save as SaveIcon, OpenInNew as OpenInNewIcon, Search as SearchIcon } from '@mui/icons-material';
 import { useGridManagement } from '@/hooks/useGridManagement';
 import { useProduct, useUpdateProduct, type UpdateProductInput } from '@/hooks/useProducts';
-import { useCategories } from '@/hooks/useDropdownOptions';
+import { useCategories, useDropdownOptions } from '@/hooks/useDropdownOptions';
 import AttachmentsSection from '@/components/AttachmentsSection';
 // import { LockService } from '@/lib/lockService';
 
@@ -47,6 +47,13 @@ const productSchema = z.object({
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
+
+// Description templates (demo data — in production, use useDropdownOptions with extraFields)
+const descriptionTemplates = [
+  { label: 'Warranty Info', value: 'warranty', extra: { content: 'This product includes a 1-year manufacturer warranty.' } },
+  { label: 'Return Policy', value: 'returns', extra: { content: 'Eligible for return within 30 days of purchase.' } },
+  { label: 'Shipping Note', value: 'shipping', extra: { content: 'Free shipping on orders over $50. Delivery in 3-5 business days.' } },
+];
 
 // Status options
 const statuses = [
@@ -344,6 +351,30 @@ export default function ProductEditPage() {
                 />
               )}
             />
+
+            {/* Description Template Lookup (not part of schema) */}
+            {/* In production, use: useDropdownOptions({ url: '/api/templates', labelField: 'name', valueField: 'id', extraFields: ['content'] }) */}
+            <TextField
+              select
+              label="Append Template"
+              value=""
+              onChange={(e) => {
+                const template = descriptionTemplates.find((t) => t.value === e.target.value);
+                if (template?.extra?.content) {
+                  const current = getValues('description') || '';
+                  const separator = current ? '\n\n' : '';
+                  setValue('description', template.extra.content + separator + current, { shouldDirty: true });
+                }
+              }}
+              fullWidth
+              helperText="Select a template to append to the description"
+            >
+              {descriptionTemplates.map((opt) => (
+                <MenuItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </MenuItem>
+              ))}
+            </TextField>
 
             {/* Description */}
             <Controller
