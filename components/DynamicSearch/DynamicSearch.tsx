@@ -155,6 +155,31 @@ export const DynamicSearch: React.FC<DynamicSearchProps> = ({
   defaultExpanded = true,
   searchTitle = 'Advanced Search',
 }) => {
+  // Reconstruct nested group values from flat initialValues
+  // flattenValues sends { subField: 'val' } to the API, but formValues needs { groupName: { subField: 'val' } }
+  const unflattenInitialValues = (flatValues: Record<string, any>) => {
+    if (!flatValues || Object.keys(flatValues).length === 0) return flatValues;
+
+    const result: Record<string, any> = { ...flatValues };
+
+    fields.forEach((field) => {
+      if (field.type === 'group' && field.fields) {
+        const groupValue: Record<string, any> = {};
+        field.fields.forEach((subField) => {
+          if (subField.name in result) {
+            groupValue[subField.name] = result[subField.name];
+            delete result[subField.name];
+          }
+        });
+        if (Object.keys(groupValue).length > 0) {
+          result[field.name] = { ...(result[field.name] || {}), ...groupValue };
+        }
+      }
+    });
+
+    return result;
+  };
+
   const [formValues, setFormValues] = useState<Record<string, any>>(() => {
     const values: Record<string, any> = {};
     fields.forEach((field) => {
@@ -162,8 +187,8 @@ export const DynamicSearch: React.FC<DynamicSearchProps> = ({
         values[field.name] = field.defaultValue;
       }
     });
-    // Override with initialValues if provided
-    return { ...values, ...(initialValues || {}) };
+    // Override with initialValues if provided, unflattening grouped field values
+    return { ...values, ...unflattenInitialValues(initialValues || {}) };
   });
 
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -197,7 +222,7 @@ export const DynamicSearch: React.FC<DynamicSearchProps> = ({
           values[field.name] = field.defaultValue;
         }
       });
-      setFormValues({ ...values, ...initialValues });
+      setFormValues({ ...values, ...unflattenInitialValues(initialValues) });
       // Clear validation errors when loading new initial values
       setValidationErrors({});
     }
