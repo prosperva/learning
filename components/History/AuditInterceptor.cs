@@ -22,11 +22,28 @@
 
 
 // ============================================================
-// AuditableAttribute.cs
+// IAuditableEntity.cs
 // ============================================================
 
-[AttributeUsage(AttributeTargets.Class)]
-public class AuditableAttribute : Attribute { }
+/// <summary>
+/// Any entity that implements this interface will:
+///   1. Have its Added / Modified / Deleted changes logged to AuditLogs.
+///   2. Have CreatedBy/CreatedAt and ModifiedBy/ModifiedAt set automatically
+///      by AuditInterceptor — no manual assignment needed in service code.
+///
+/// The four properties below must be columns on the entity's own table.
+///
+/// Usage:
+///   public class Customer : IAuditableEntity { ... }
+/// </summary>
+public interface IAuditableEntity
+{
+    string  CreatedBy  { get; set; }
+    DateTime CreatedAt { get; set; }
+
+    string?  ModifiedBy  { get; set; }
+    DateTime? ModifiedAt { get; set; }
+}
 
 
 // ============================================================
@@ -192,11 +209,23 @@ public class AuditInterceptor : SaveChangesInterceptor
                                           or EntityState.Modified
                                           or EntityState.Deleted))
         {
-            var entityType = entry.Entity.GetType();
-
-            // ✅ Opt-in: only audit entities decorated with [Auditable]
-            if (entityType.GetCustomAttribute<AuditableAttribute>() is null)
+            // ✅ Opt-in: only audit entities that implement IAuditableEntity
+            if (entry.Entity is not IAuditableEntity auditable)
                 continue;
+
+            // ✅ Stamp audit columns directly on the entity — no service-layer boilerplate needed
+            if (entry.State == EntityState.Added)
+            {
+                auditable.CreatedBy = user;
+                auditable.CreatedAt = now;
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                auditable.ModifiedBy = user;
+                auditable.ModifiedAt = now;
+            }
+
+            var entityType = entry.Entity.GetType();
 
             // ✅ TableName comes from the [Table] attribute if present, otherwise the class name
             var tableAttr = entityType.GetCustomAttribute<TableAttribute>();
@@ -472,9 +501,8 @@ public class AuditController : ControllerBase
 // Example Entities
 // ============================================================
 
-[Auditable]
 [Table("Customers", Schema = "dbo")]
-public class Customer
+public class Customer : IAuditableEntity
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -491,9 +519,23 @@ public class Customer
     [Required]
     [MaxLength(50)]
     public string Status { get; set; } = "Active";
+
+    // --- IAuditableEntity ---
+    // AuditInterceptor sets these automatically; never assign them manually.
+
+    [Required]
+    [MaxLength(256)]
+    public string CreatedBy { get; set; } = "";
+
+    public DateTime CreatedAt { get; set; }
+
+    [MaxLength(256)]
+    public string? ModifiedBy { get; set; }
+
+    public DateTime? ModifiedAt { get; set; }
 }
 
-// Not audited — no [Auditable] attribute
+// Not audited — does not implement IAuditableEntity
 [Table("LogEntries", Schema = "dbo")]
 public class LogEntry
 {
