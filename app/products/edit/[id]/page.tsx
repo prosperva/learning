@@ -33,6 +33,7 @@ import { useGridManagement } from '@/hooks/useGridManagement';
 import { useProduct, useUpdateProduct, type UpdateProductInput } from '@/hooks/useProducts';
 import { useCategories, useDropdownOptions } from '@/hooks/useDropdownOptions';
 import AttachmentsSection from '@/components/AttachmentsSection';
+import AuditHistoryCompact from '@/components/History/AuditHistoryCompact';
 // import { LockService } from '@/lib/lockService';
 
 // Form validation schema
@@ -189,7 +190,7 @@ export default function ProductEditPage() {
         <Skeleton variant="text" width={300} height={40} sx={{ mb: 1 }} />
         <Skeleton variant="text" width={200} height={24} sx={{ mb: 3 }} />
         <Paper elevation={2} sx={{ p: 3 }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box sx={{ maxWidth: { xs: '100%', sm: '80%', md: '65%', lg: '45%' }, display: 'flex', flexDirection: 'column', gap: 3 }}>
             <Skeleton variant="rounded" height={56} />
             <Skeleton variant="rounded" height={56} />
             <Skeleton variant="rounded" height={56} />
@@ -243,7 +244,7 @@ export default function ProductEditPage() {
       {/* Edit Form */}
       <Paper elevation={2} sx={{ p: 3 }}>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <Box sx={{ maxWidth: { xs: '100%', sm: '80%', md: '60%', lg: '45%' }, display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box sx={{ maxWidth: { xs: '100%', sm: '80%', md: '65%', lg: '45%' }, display: 'flex', flexDirection: 'column', gap: 3 }}>
             {/* Product Name */}
             {/* <Controller
               name="name"
@@ -455,6 +456,9 @@ export default function ProductEditPage() {
           </Typography>
         </Paper>
       )}
+      {/* Audit History */}
+      <AuditHistoryCompact tableName="Product" recordId={id} />
+
       {/* Category Picker Modal */}
       <Dialog open={categoryModalOpen} onClose={() => setCategoryModalOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Move to Category</DialogTitle>
