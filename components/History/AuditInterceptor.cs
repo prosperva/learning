@@ -38,11 +38,45 @@
 /// </summary>
 public interface IAuditableEntity
 {
-    string  CreatedBy  { get; set; }
-    DateTime CreatedAt { get; set; }
+    string    CreatedBy  { get; set; }
+    DateTime  CreatedAt  { get; set; }
 
-    string?  ModifiedBy  { get; set; }
+    string?   ModifiedBy { get; set; }
     DateTime? ModifiedAt { get; set; }
+}
+
+
+// ============================================================
+// AuditableEntity.cs  (abstract base)
+// ============================================================
+
+/// <summary>
+/// Implements IAuditableEntity once.
+/// Concrete entities inherit this instead of repeating the four audit columns.
+///
+/// Hierarchy:
+///   IAuditableEntity  (contract)
+///       ↓
+///   AuditableEntity   (abstract — owns the columns + data annotations)
+///       ↓
+///   Customer, Product, …  (concrete — only business properties needed)
+/// </summary>
+public abstract class AuditableEntity : IAuditableEntity
+{
+    [Required]
+    [MaxLength(256)]
+    [Column("CreatedBy")]
+    public string CreatedBy { get; set; } = "";
+
+    [Column("CreatedAt")]
+    public DateTime CreatedAt { get; set; }
+
+    [MaxLength(256)]
+    [Column("ModifiedBy")]
+    public string? ModifiedBy { get; set; }
+
+    [Column("ModifiedAt")]
+    public DateTime? ModifiedAt { get; set; }
 }
 
 
@@ -502,7 +536,7 @@ public class AuditController : ControllerBase
 // ============================================================
 
 [Table("Customers", Schema = "dbo")]
-public class Customer : IAuditableEntity
+public class Customer : AuditableEntity   // audit columns inherited — nothing to repeat
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -519,20 +553,6 @@ public class Customer : IAuditableEntity
     [Required]
     [MaxLength(50)]
     public string Status { get; set; } = "Active";
-
-    // --- IAuditableEntity ---
-    // AuditInterceptor sets these automatically; never assign them manually.
-
-    [Required]
-    [MaxLength(256)]
-    public string CreatedBy { get; set; } = "";
-
-    public DateTime CreatedAt { get; set; }
-
-    [MaxLength(256)]
-    public string? ModifiedBy { get; set; }
-
-    public DateTime? ModifiedAt { get; set; }
 }
 
 // Not audited — does not implement IAuditableEntity
