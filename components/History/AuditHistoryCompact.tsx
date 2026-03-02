@@ -1,6 +1,8 @@
 // components/AuditHistoryCompact.tsx
 "use client";
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
+import { useAuditLogs } from "@/hooks/useAuditLogs";
+import type { AuditLog, AuditChange } from "@/lib/api/auditLogs";
 import {
   Card,
   CardHeader,
@@ -34,172 +36,15 @@ import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
 
-// ---------- Interfaces ----------
-interface AuditChange {
-  Old: string | null;
-  New: string | null;
-}
-
-interface AuditLog {
-  id: number;
-  tableName: string;
-  recordId: string;
-  operation: string;
-  changedBy: string;
-  changedAt: string;
-  changes: Record<string, AuditChange>;
-}
-
+// ---------- Types ----------
 interface Props {
   tableName: string;
   recordId: string | number;
+  title?: string;
 }
 
-type SortField = "changedAt" | "changedBy" | "operation";
+type SortField = "modifiedDate" | "modifiedBy" | "operation";
 type SortDir = "asc" | "desc";
-
-// ---------- Mock Data ----------
-const mockAuditData: AuditLog[] = [
-  {
-    id: 1,
-    tableName: "Product",
-    recordId: "1",
-    operation: "Added",
-    changedBy: "admin@domain.com",
-    changedAt: "2025-12-01T09:15:00Z",
-    changes: {
-      Name: { Old: null, New: "Product 1" },
-      Category: { Old: null, New: "electronics" },
-      Status: { Old: null, New: "active" },
-      Price: { Old: null, New: "299.99" },
-      Stock: { Old: null, New: "150" },
-      Description: { Old: null, New: "Description for product 1. This is a sample product with detailed information." },
-    },
-  },
-  {
-    id: 2,
-    tableName: "Customer",
-    recordId: "1",
-    operation: "Modified",
-    changedBy: "admin@domain.com",
-    changedAt: "2025-12-05T10:30:00Z",
-    changes: {
-      Email: { Old: "john@example.com", New: "john.doe@example.com" },
-    },
-  },
-  {
-    id: 3,
-    tableName: "Customer",
-    recordId: "1",
-    operation: "Modified",
-    changedBy: "jane@domain.com",
-    changedAt: "2025-12-08T14:00:00Z",
-    changes: {
-      Status: { Old: "Active", New: "Inactive" },
-    },
-  },
-  {
-    id: 4,
-    tableName: "Customer",
-    recordId: "1",
-    operation: "Modified",
-    changedBy: "jane@domain.com",
-    changedAt: "2025-12-10T11:20:00Z",
-    changes: {
-      Status: { Old: "Inactive", New: "Active" },
-    },
-  },
-  {
-    id: 5,
-    tableName: "Customer",
-    recordId: "1",
-    operation: "Modified",
-    changedBy: "prosper@domain.com",
-    changedAt: "2025-12-12T09:45:00Z",
-    changes: {
-      Name: { Old: "John Doe", New: "John A. Doe" },
-    },
-  },
-  {
-    id: 6,
-    tableName: "Customer",
-    recordId: "1",
-    operation: "Modified",
-    changedBy: "admin@domain.com",
-    changedAt: "2025-12-15T16:00:00Z",
-    changes: {
-      Phone: { Old: null, New: "555-1234" },
-      Address: { Old: null, New: "123 Main St" },
-    },
-  },
-  {
-    id: 7,
-    tableName: "Customer",
-    recordId: "1",
-    operation: "Modified",
-    changedBy: "prosper@domain.com",
-    changedAt: "2025-12-18T13:30:00Z",
-    changes: {
-      Address: { Old: "123 Main St", New: "456 Elm Ave" },
-    },
-  },
-  {
-    id: 8,
-    tableName: "Customer",
-    recordId: "1",
-    operation: "Modified",
-    changedBy: "jane@domain.com",
-    changedAt: "2025-12-20T08:15:00Z",
-    changes: {
-      Phone: { Old: "555-1234", New: "555-5678" },
-    },
-  },
-  {
-    id: 9,
-    tableName: "Customer",
-    recordId: "1",
-    operation: "Modified",
-    changedBy: "admin@domain.com",
-    changedAt: "2025-12-22T10:00:00Z",
-    changes: {
-      Status: { Old: "Active", New: "Suspended" },
-    },
-  },
-  {
-    id: 10,
-    tableName: "Customer",
-    recordId: "1",
-    operation: "Modified",
-    changedBy: "prosper@domain.com",
-    changedAt: "2025-12-24T15:45:00Z",
-    changes: {
-      Status: { Old: "Suspended", New: "Active" },
-    },
-  },
-  {
-    id: 11,
-    tableName: "Customer",
-    recordId: "1",
-    operation: "Modified",
-    changedBy: "admin@domain.com",
-    changedAt: "2025-12-26T09:00:00Z",
-    changes: {
-      Name: { Old: "John A. Doe", New: "John Doe" },
-      Email: { Old: "john.doe@example.com", New: "jdoe@example.com" },
-    },
-  },
-  {
-    id: 20,
-    tableName: "Customer",
-    recordId: "1",
-    operation: "Deleted",
-    changedBy: "prosper@domain.com",
-    changedAt: "2025-12-30T11:45:00Z",
-    changes: {
-      Status: { Old: "Active", New: null },
-    },
-  },
-];
 
 // ---------- Helpers ----------
 const operationColor = (op: string): "success" | "warning" | "error" | "default" => {
@@ -279,9 +124,9 @@ function AuditRow({ row }: { row: AuditLog }) {
 
         {/* Date / Time */}
         <TableCell>
-          <Tooltip title={new Date(row.changedAt).toLocaleString()} arrow placement="top">
+          <Tooltip title={new Date(row.modifiedDate).toLocaleString()} arrow placement="top">
             <Typography variant="body2" sx={{ whiteSpace: "nowrap" }}>
-              {relativeTime(row.changedAt)}
+              {relativeTime(row.modifiedDate)}
             </Typography>
           </Tooltip>
         </TableCell>
@@ -290,11 +135,11 @@ function AuditRow({ row }: { row: AuditLog }) {
         <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
           <Box display="flex" alignItems="center" gap={1}>
             <Avatar
-              sx={{ width: 28, height: 28, fontSize: 11, bgcolor: avatarColor(row.changedBy) }}
+              sx={{ width: 28, height: 28, fontSize: 11, bgcolor: avatarColor(row.modifiedBy) }}
             >
-              {getInitials(row.changedBy)}
+              {getInitials(row.modifiedBy)}
             </Avatar>
-            <Typography variant="body2" noWrap>{row.changedBy}</Typography>
+            <Typography variant="body2" noWrap>{row.modifiedBy}</Typography>
           </Box>
         </TableCell>
 
@@ -332,11 +177,11 @@ function AuditRow({ row }: { row: AuditLog }) {
                 sx={{ display: { xs: "flex", sm: "none" }, mb: 1.5 }}
               >
                 <Avatar
-                  sx={{ width: 24, height: 24, fontSize: 10, bgcolor: avatarColor(row.changedBy) }}
+                  sx={{ width: 24, height: 24, fontSize: 10, bgcolor: avatarColor(row.modifiedBy) }}
                 >
-                  {getInitials(row.changedBy)}
+                  {getInitials(row.modifiedBy)}
                 </Avatar>
-                <Typography variant="caption" color="text.secondary">{row.changedBy}</Typography>
+                <Typography variant="caption" color="text.secondary">{row.modifiedBy}</Typography>
               </Box>
 
               <Table size="small">
@@ -439,26 +284,20 @@ function AuditRow({ row }: { row: AuditLog }) {
 }
 
 // ---------- Component ----------
-export default function AuditHistoryCompact({ tableName, recordId }: Props) {
-  const [rows, setRows] = useState<AuditLog[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+export default function AuditHistoryCompact({ tableName, recordId, title = "Change History" }: Props) {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
   // Sorting
-  const [sortField, setSortField] = useState<SortField>("changedAt");
+  const [sortField, setSortField] = useState<SortField>("modifiedDate");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   // Filters
   const [quickFilter, setQuickFilter] = useState("");
   const [operationFilter, setOperationFilter] = useState("all");
 
-  useEffect(() => {
-    setTimeout(() => {
-      setRows(mockAuditData);
-      setLoading(false);
-    }, 800);
-  }, [tableName, recordId]);
+  const { data, isLoading, isError } = useAuditLogs({ tableName, recordId: String(recordId) });
+  const rows: AuditLog[] = data?.data ?? [];
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -488,11 +327,11 @@ export default function AuditHistoryCompact({ tableName, recordId }: Props) {
       filtered = filtered.filter((r) => r.operation === operationFilter);
     }
 
-    // Quick filter — matches changedBy, operation, or any changed field name/value
+    // Quick filter — matches modifiedBy, operation, or any changed field name/value
     if (quickFilter.trim()) {
       const q = quickFilter.trim().toLowerCase();
       filtered = filtered.filter((r) => {
-        if (r.changedBy.toLowerCase().includes(q)) return true;
+        if (r.modifiedBy.toLowerCase().includes(q)) return true;
         if (r.operation.toLowerCase().includes(q)) return true;
         return Object.entries(r.changes).some(
           ([field, diff]) =>
@@ -506,10 +345,10 @@ export default function AuditHistoryCompact({ tableName, recordId }: Props) {
     // Sort
     filtered = [...filtered].sort((a, b) => {
       let cmp = 0;
-      if (sortField === "changedAt") {
-        cmp = new Date(a.changedAt).getTime() - new Date(b.changedAt).getTime();
-      } else if (sortField === "changedBy") {
-        cmp = a.changedBy.localeCompare(b.changedBy);
+      if (sortField === "modifiedDate") {
+        cmp = new Date(a.modifiedDate).getTime() - new Date(b.modifiedDate).getTime();
+      } else if (sortField === "modifiedBy") {
+        cmp = a.modifiedBy.localeCompare(b.modifiedBy);
       } else if (sortField === "operation") {
         cmp = a.operation.localeCompare(b.operation);
       }
@@ -526,18 +365,21 @@ export default function AuditHistoryCompact({ tableName, recordId }: Props) {
   return (
     <Card variant="outlined" sx={{ mt: 4 }}>
       <CardHeader
-        title="Change History"
+        title={title}
         subheader="Click a row to see field-level changes"
-        titleTypographyProps={{ variant: "h6", fontWeight: "bold" }}
-        slotProps={{ subheader: { variant: "caption" } }}
+        slotProps={{ title: { variant: "h6", fontWeight: "bold" }, subheader: { variant: "caption" } }}
       />
       <Divider />
       <CardContent sx={{ p: 0, "&:last-child": { pb: 0 } }}>
-        {loading ? (
+        {isLoading ? (
           <Box display="flex" alignItems="center" gap={1} p={2}>
             <CircularProgress size={20} />
             <Typography variant="body2">Loading history...</Typography>
           </Box>
+        ) : isError ? (
+          <Typography variant="body2" color="error" p={2}>
+            Failed to load history.
+          </Typography>
         ) : rows.length === 0 ? (
           <Typography variant="body2" color="text.secondary" p={2}>
             No history available.
@@ -613,9 +455,9 @@ export default function AuditHistoryCompact({ tableName, recordId }: Props) {
 
                     <TableCell sx={{ fontWeight: "bold" }}>
                       <TableSortLabel
-                        active={sortField === "changedAt"}
-                        direction={sortField === "changedAt" ? sortDir : "asc"}
-                        onClick={() => handleSort("changedAt")}
+                        active={sortField === "modifiedDate"}
+                        direction={sortField === "modifiedDate" ? sortDir : "asc"}
+                        onClick={() => handleSort("modifiedDate")}
                       >
                         Date
                       </TableSortLabel>
@@ -623,9 +465,9 @@ export default function AuditHistoryCompact({ tableName, recordId }: Props) {
 
                     <TableCell sx={{ fontWeight: "bold", display: { xs: "none", sm: "table-cell" } }}>
                       <TableSortLabel
-                        active={sortField === "changedBy"}
-                        direction={sortField === "changedBy" ? sortDir : "asc"}
-                        onClick={() => handleSort("changedBy")}
+                        active={sortField === "modifiedBy"}
+                        direction={sortField === "modifiedBy" ? sortDir : "asc"}
+                        onClick={() => handleSort("modifiedBy")}
                       >
                         Changed By
                       </TableSortLabel>

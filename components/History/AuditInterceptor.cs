@@ -350,8 +350,8 @@ public class AuditLogDto
     public string TableName { get; set; } = "";
     public string RecordId { get; set; } = "";
     public string Operation { get; set; } = "";
-    public string ChangedBy { get; set; } = "";
-    public DateTime ChangedAt { get; set; }
+    public string ModifiedBy { get; set; } = "";
+    public DateTime ModifiedDate { get; set; }
     public Dictionary<string, AuditChange> Changes { get; set; } = new();
 }
 
@@ -435,6 +435,8 @@ public class AuditLogProfile : Profile
     public AuditLogProfile()
     {
         CreateMap<AuditLog, AuditLogDto>()
+            .ForMember(dest => dest.ModifiedBy,   opt => opt.MapFrom(src => src.ChangedBy))
+            .ForMember(dest => dest.ModifiedDate, opt => opt.MapFrom(src => src.ChangedAt))
             .ForMember(
                 dest => dest.Changes,
                 opt => opt.MapFrom(src =>
