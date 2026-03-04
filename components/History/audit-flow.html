@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit Log — Flow Breakdown</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #000;
+    color: #f0f0f0;
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 40px;
+  }
+
+  /* Subtle grid */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .card {
+    position: relative;
+    z-index: 1;
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 48px 56px;
+    width: 100%;
+    max-width: 720px;
+  }
+
+  .card-header {
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #1a1a1a;
+  }
+
+  .tag {
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: #555;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: #fff;
+  }
+
+  .step-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .step-item {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    padding: 20px 0;
+    border-bottom: 1px solid #141414;
+    opacity: 0;
+    transform: translateX(-12px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .step-item { border-bottom: none; padding: 16px 0 0; }
+  .step-item.visible { opacity: 1; transform: translateX(0); }
+
+  .connector {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding-left: 15px;
+    height: 28px;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+  .connector.visible { opacity: 1; }
+  .connector-line {
+    width: 1px;
+    flex: 1;
+    background: #2a2a2a;
+    margin-left: 0;
+  }
+  .connector-arrow {
+    width: 0; height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 6px solid #2a2a2a;
+    margin-left: -3px;
+  }
+
+  .step-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+    margin-top: 2px;
+    background: #111;
+  }
+
+  .step-content { flex: 1; }
+
+  .step-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+  }
+
+  .step-desc {
+    font-size: 12px;
+    color: #666;
+    line-height: 1.8;
+  }
+
+  code {
+    color: #aaa;
+    background: #111;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    border: 1px solid #222;
+  }
+
+  .footer {
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .footer-text {
+    font-size: 10px;
+    color: #333;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .stack {
+    display: flex;
+    gap: 8px;
+  }
+
+  .stack-badge {
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border: 1px solid #222;
+    border-radius: 3px;
+    color: #444;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="card-header">
+      <div class="tag">// Audit Log System</div>
+      <h1>Flow Breakdown</h1>
+    </div>
+
+    <ul class="step-list">
+      <li class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">Middleware Sets Identity</div>
+          <div class="step-desc"><code>ResourceResolutionMiddleware</code> runs on every request — populates <code>ICurrentRequestResource.ResourceId</code> from JWT claims before the controller even runs.</div>
+        </div>
+      </li>
+      <div class="connector" id="c1"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+      <li class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">EF Detects Changes</div>
+          <div class="step-desc">When any repository calls <code>SaveChangesAsync()</code>, EF Core's ChangeTracker has all Modified / Added / Deleted entities queued up.</div>
+        </div>
+      </li>
+      <div class="connector" id="c2"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+      <li class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <div class="step-title">Interceptor Fires</div>
+          <div class="step-desc"><code>SavingChangesAsync</code> intercepts BEFORE the SQL executes. Entity states are still Modified / Added / Deleted — perfect for capturing what changed.</div>
+        </div>
+      </li>
+      <div class="connector" id="c3"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+      <li class="step-item">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <div class="step-title">IAuditableEntity Filter</div>
+          <div class="step-desc">Only entities implementing <code>IAuditableEntity</code> get audited. Add the interface to any entity you want tracked — zero other changes needed.</div>
+        </div>
+      </li>
+      <div class="connector" id="c4"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+      <li class="step-item">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <div class="step-title">Separate DbContext Write</div>
+          <div class="step-desc">Audit logs are written via <code>CodesAuditLogDbContext</code> — a completely separate context. Prevents infinite loops and keeps concerns isolated.</div>
+        </div>
+      </li>
+    </ul>
+
+    <div class="footer">
+      <span class="footer-text">// Zero manual audit code</span>
+      <div class="stack">
+        <span class="stack-badge">.NET 8</span>
+        <span class="stack-badge">EF Core</span>
+        <span class="stack-badge">SQL Server</span>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const items = document.querySelectorAll('.step-item');
+  const connectors = document.querySelectorAll('.connector');
+  let current = 0;
+
+  function revealNext() {
+    if (current < items.length) {
+      items[current].classList.add('visible');
+      if (current < connectors.length) {
+        setTimeout(() => connectors[current].classList.add('visible'), 400);
+      }
+      current++;
+    }
+  }
+
+  function revealPrev() {
+    if (current > 0) {
+      current--;
+      items[current].classList.remove('visible');
+      if (current < connectors.length) {
+        connectors[current].classList.remove('visible');
+      }
+    }
+  }
+
+  document.addEventListener('click', e => {
+    // Right half = next, left half = back
+    if (e.clientX > window.innerWidth / 2) revealNext();
+    else revealPrev();
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') revealNext();
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'Backspace') revealPrev();
+  });
+</script>
+</body>
+</html>

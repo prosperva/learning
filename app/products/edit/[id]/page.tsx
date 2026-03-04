@@ -70,7 +70,9 @@ export default function ProductEditPage() {
   // const lockReleasedRef = useRef(false);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState('');
-  const { data: categories = [] } = useCategories();
+  // Only fetch categories when the picker modal is opened — avoids an unnecessary
+  // network request on every page load since categories are rarely needed.
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories({ enabled: categoryModalOpen });
 
   // Use grid management hook for navigation
   const { returnToGrid } = useGridManagement({
@@ -121,6 +123,16 @@ export default function ProductEditPage() {
     isError,
     error,
   } = useProduct(id);
+
+  // Defer secondary sections (attachments, audit) until after the form has painted.
+  // This lets the critical form render first without competing API requests.
+  const [showSecondary, setShowSecondary] = useState(false);
+  useEffect(() => {
+    if (!isLoading) {
+      const t = setTimeout(() => setShowSecondary(true), 0);
+      return () => clearTimeout(t);
+    }
+  }, [isLoading]);
 
   // Update mutation
   const updateMutation = useUpdateProduct();
@@ -412,8 +424,8 @@ export default function ProductEditPage() {
               )}
             />
 
-            {/* Attachments */}
-            <AttachmentsSection productId={id} />
+            {/* Attachments — deferred until after form paints */}
+            {showSecondary && <AttachmentsSection productId={id} />}
 
             <Divider />
 
@@ -445,19 +457,24 @@ export default function ProductEditPage() {
         </form>
       </Paper>
 
-      {/* Product Info */}
-      {product && (
-        <Paper elevation={1} sx={{ p: 2, mt: 3, bgcolor: 'grey.50' }}>
-          <Typography variant="subtitle2" color="text.secondary">
-            Created: {new Date(product.createdAt).toLocaleString()}
-          </Typography>
-          <Typography variant="subtitle2" color="text.secondary">
-            Last Updated: {new Date(product.updatedAt).toLocaleString()}
-          </Typography>
-        </Paper>
+      {/* Secondary sections — deferred until after the form has painted */}
+      {showSecondary && (
+        <>
+          {/* Product Info */}
+          {product && (
+            <Paper elevation={1} sx={{ p: 2, mt: 3, bgcolor: 'grey.50' }}>
+              <Typography variant="subtitle2" color="text.secondary">
+                Created: {new Date(product.createdAt).toLocaleString()}
+              </Typography>
+              <Typography variant="subtitle2" color="text.secondary">
+                Last Updated: {new Date(product.updatedAt).toLocaleString()}
+              </Typography>
+            </Paper>
+          )}
+          {/* Audit History */}
+          <AuditHistoryCompact tableName="Product" recordId={id} />
+        </>
       )}
-      {/* Audit History */}
-      <AuditHistoryCompact tableName="Product" recordId={id} />
 
       {/* Category Picker Modal */}
       <Dialog open={categoryModalOpen} onClose={() => setCategoryModalOpen(false)} maxWidth="xs" fullWidth>
@@ -483,23 +500,29 @@ export default function ProductEditPage() {
             />
           </Box>
           <List sx={{ maxHeight: 300, overflow: 'auto' }}>
-            {categories
-              .filter((c) => c.label.toLowerCase().includes(categoryFilter.toLowerCase()))
-              .map((cat) => {
-                const catValue = String(cat.value ?? '');
-                return (
-                  <ListItemButton
-                    key={catValue}
-                    selected={getValues('category') === catValue}
-                    onClick={() => {
-                      setValue('category', catValue, { shouldDirty: true });
-                      setCategoryModalOpen(false);
-                    }}
-                  >
-                    <ListItemText primary={cat.label} secondary={catValue} />
-                  </ListItemButton>
-                );
-              })}
+            {categoriesLoading ? (
+              <Box display="flex" justifyContent="center" py={3}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : (
+              categories
+                .filter((c) => c.label.toLowerCase().includes(categoryFilter.toLowerCase()))
+                .map((cat) => {
+                  const catValue = String(cat.value ?? '');
+                  return (
+                    <ListItemButton
+                      key={catValue}
+                      selected={getValues('category') === catValue}
+                      onClick={() => {
+                        setValue('category', catValue, { shouldDirty: true });
+                        setCategoryModalOpen(false);
+                      }}
+                    >
+                      <ListItemText primary={cat.label} secondary={catValue} />
+                    </ListItemButton>
+                  );
+                })
+            )}
           </List>
         </DialogContent>
         <DialogActions>

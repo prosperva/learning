@@ -1,6 +1,6 @@
 export interface AuditChange {
-  Old: string | null;
-  New: string | null;
+  old: string | null;
+  new: string | null;
 }
 
 export interface AuditLog {

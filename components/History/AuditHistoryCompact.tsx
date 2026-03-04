@@ -1,8 +1,63 @@
 // components/AuditHistoryCompact.tsx
 "use client";
 import { useState, useMemo } from "react";
-import { useAuditLogs } from "@/hooks/useAuditLogs";
+// import { useAuditLogs } from "@/hooks/useAuditLogs";
 import type { AuditLog, AuditChange } from "@/lib/api/auditLogs";
+
+// ---------- Mock data ----------
+const MOCK_ROWS: AuditLog[] = [
+  {
+    id: 1,
+    tableName: "Product",
+    recordId: "42",
+    operation: "Added",
+    modifiedBy: "alice.johnson@company.com",
+    modifiedDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    changes: {
+      Name:        { old: null,         new: "Wireless Headphones" },
+      Category:    { old:null,         new:"Electronics" },
+      Price:       { old:null,         new:"79.99" },
+      Stock:       { old:null,         new:"250" },
+      Status:      { old:null,         new:"active" },
+    },
+  },
+  {
+    id: 2,
+    tableName: "Product",
+    recordId: "42",
+    operation: "Modified",
+    modifiedBy: "bob.smith@company.com",
+    modifiedDate: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+    changes: {
+      Price:  { old:"79.99",  new:"64.99" },
+      Stock:  { old:"250",    new:"198" },
+    },
+  },
+  {
+    id: 3,
+    tableName: "Product",
+    recordId: "42",
+    operation: "Modified",
+    modifiedBy: "alice.johnson@company.com",
+    modifiedDate: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
+    changes: {
+      Status:      { old:"active",           new:"inactive" },
+      Description: { old:"Great headphones", new:"Award-winning noise-cancelling headphones with 30h battery." },
+    },
+  },
+  {
+    id: 4,
+    tableName: "Product",
+    recordId: "42",
+    operation: "Modified",
+    modifiedBy: "carol.wang@company.com",
+    modifiedDate: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
+    changes: {
+      Status:   { old:"inactive", new:"active" },
+      Featured: { old:"false",    new:"true" },
+    },
+  },
+];
 import {
   Card,
   CardHeader,
@@ -233,20 +288,20 @@ function AuditRow({ row }: { row: AuditLog }) {
 
                       {/* Desktop: separate Before / After cells */}
                       <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
-                        {diff.Old === null ? (
+                        {diff.old === null ? (
                           <EmptyBadge />
                         ) : (
                           <Typography variant="body2" sx={{ color: "error.main", textDecoration: "line-through" }}>
-                            {diff.Old}
+                            {diff.old}
                           </Typography>
                         )}
                       </TableCell>
                       <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
-                        {diff.New === null ? (
+                        {diff.new === null ? (
                           <EmptyBadge />
                         ) : (
                           <Typography variant="body2" sx={{ color: "success.main" }}>
-                            {diff.New}
+                            {diff.new}
                           </Typography>
                         )}
                       </TableCell>
@@ -254,19 +309,19 @@ function AuditRow({ row }: { row: AuditLog }) {
                       {/* Mobile: stacked Before → After in one cell */}
                       <TableCell sx={{ display: { xs: "table-cell", sm: "none" } }}>
                         <Box display="flex" flexDirection="column" gap={0.25}>
-                          {diff.Old === null ? (
+                          {diff.old === null ? (
                             <EmptyBadge />
                           ) : (
                             <Typography variant="caption" sx={{ color: "error.main", textDecoration: "line-through" }}>
-                              {diff.Old}
+                              {diff.old}
                             </Typography>
                           )}
                           <Typography variant="caption" color="text.disabled" lineHeight={1}>↓</Typography>
-                          {diff.New === null ? (
+                          {diff.new === null ? (
                             <EmptyBadge />
                           ) : (
                             <Typography variant="caption" sx={{ color: "success.main" }}>
-                              {diff.New}
+                              {diff.new}
                             </Typography>
                           )}
                         </Box>
@@ -296,8 +351,11 @@ export default function AuditHistoryCompact({ tableName, recordId, title = "Chan
   const [quickFilter, setQuickFilter] = useState("");
   const [operationFilter, setOperationFilter] = useState("all");
 
-  const { data, isLoading, isError } = useAuditLogs({ tableName, recordId: String(recordId) });
-  const rows: AuditLog[] = data?.data ?? [];
+  // const { data, isLoading, isError } = useAuditLogs({ tableName, recordId: String(recordId) });
+  // const rows: AuditLog[] = data?.data ?? [];
+  const isLoading = false;
+  const isError = false;
+  const rows: AuditLog[] = MOCK_ROWS;
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -336,8 +394,8 @@ export default function AuditHistoryCompact({ tableName, recordId, title = "Chan
         return Object.entries(r.changes).some(
           ([field, diff]) =>
             field.toLowerCase().includes(q) ||
-            diff.Old?.toLowerCase().includes(q) ||
-            diff.New?.toLowerCase().includes(q)
+            diff.old?.toLowerCase().includes(q) ||
+            diff.new?.toLowerCase().includes(q)
         );
       });
     }
