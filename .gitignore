@@ -29,6 +29,9 @@ yarn-error.log*
 .env*.local
 .env
 
+# .NET local secrets
+backend/appsettings.Development.json
+
 # vercel
 .vercel
 

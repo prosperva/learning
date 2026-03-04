@@ -2,7 +2,7 @@ services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
-      SA_PASSWORD: "CommonFields@123"
+      SA_PASSWORD: "${SA_PASSWORD}"
       ACCEPT_EULA: "Y"
       MSSQL_PID: "Developer"
     ports:
@@ -12,7 +12,7 @@ services:
     healthcheck:
       test: >
         /opt/mssql-tools18/bin/sqlcmd
-        -S localhost -U sa -P "CommonFields@123"
+        -S localhost -U sa -P "${SA_PASSWORD}"
         -Q "SELECT 1" -No
         || exit 1
       interval: 10s
@@ -25,7 +25,7 @@ services:
     ports:
       - "10000:10000"   # Blob service
     environment:
-      AZURITE_ACCOUNTS: "devstoreaccount1:Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OcuBF3T5cBj4AZ9t8JbvO6/iLFXw/gZJ6nW1HBlWT+xj0vxJKa3UXQ=="
+      AZURITE_ACCOUNTS: "devstoreaccount1:${AZURITE_KEY}"
     command: azurite-blob --blobHost 0.0.0.0 --loose --skipApiVersionCheck
 
   api:
@@ -37,15 +37,9 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: "8080"
-      ConnectionStrings__DefaultConnection: >-
-        Server=sqlserver;
-        Database=CommonFields;
-        User Id=sa;
-        Password=CommonFields@123;
-        TrustServerCertificate=True;
-        MultipleActiveResultSets=True
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=CommonFields;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=True"
       AzureStorage__AccountName: "devstoreaccount1"
-      AzureStorage__AccountKey: "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OcuBF3T5cBj4AZ9t8JbvO6/iLFXw/gZJ6nW1HBlWT+xj0vxJKa3UXQ=="
+      AzureStorage__AccountKey: "${AZURITE_KEY}"
       AzureStorage__ServiceUri: "http://azurite:10000"
       AzureStorage__ContainerName: "attachments"
     depends_on:
