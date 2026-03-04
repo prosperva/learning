@@ -21,6 +21,8 @@ interface UseGridManagementReturn {
   clearFilters: () => void;
   // Clear a specific filter
   clearFilter: (key: string) => void;
+  // Prefetch a route's JS bundle (call on hover before navigateTo)
+  prefetchRoute: (path: string) => void;
   // Navigate to a path while saving current state
   navigateTo: (path: string) => void;
   // Return to the grid from edit page
@@ -113,6 +115,14 @@ export function useGridManagement({
       updateGridState(gridId, { filters: newFilters, page: 0 });
     },
     [gridId, updateGridState]
+  );
+
+  // Prefetch a route's JS bundle so navigation is instant on click
+  const prefetchRoute = useCallback(
+    (path: string) => {
+      router.prefetch(path);
+    },
+    [router]
   );
 
   // Navigate to edit page while preserving state
@@ -248,6 +258,7 @@ export function useGridManagement({
     clearFilters,
     clearFilter,
     navigateTo,
+    prefetchRoute,
     returnToGrid,
     setPage,
     setPageSize,

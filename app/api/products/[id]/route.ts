@@ -1,124 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { products } from '../route';
 
-// Type guard for params
-type RouteParams = {
-  params: Promise<{ id: string }>;
-};
+const BACKEND = process.env.BACKEND_API_URL ?? '';
 
-// GET /api/products/[id] - Get a single product
-export async function GET(
-  request: NextRequest,
-  { params }: RouteParams
-) {
-  const { id } = await params;
-  const productId = parseInt(id, 10);
+type RouteParams = { params: Promise<{ id: string }> };
 
-  if (isNaN(productId)) {
-    return NextResponse.json(
-      { message: 'Invalid product ID' },
-      { status: 400 }
-    );
-  }
-
-  const product = products.find((p) => p.id === productId);
-
-  if (!product) {
-    return NextResponse.json(
-      { message: 'Product not found' },
-      { status: 404 }
-    );
-  }
-
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 150));
-
-  return NextResponse.json(product);
+function cookie(request: NextRequest) {
+  const c = request.headers.get('cookie');
+  return c ? { cookie: c } : {};
 }
 
-// PUT /api/products/[id] - Update a product
-export async function PUT(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+// GET /api/products/[id]
+export async function GET(request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
-  const productId = parseInt(id, 10);
-
-  if (isNaN(productId)) {
-    return NextResponse.json(
-      { message: 'Invalid product ID' },
-      { status: 400 }
-    );
-  }
-
-  const index = products.findIndex((p) => p.id === productId);
-
-  if (index === -1) {
-    return NextResponse.json(
-      { message: 'Product not found' },
-      { status: 404 }
-    );
-  }
-
-  try {
-    const body = await request.json();
-    const now = new Date().toISOString();
-
-    // Update product fields (only provided fields)
-    const updatedProduct = {
-      ...products[index],
-      ...(body.name !== undefined && { name: body.name }),
-      ...(body.category !== undefined && { category: body.category }),
-      ...(body.status !== undefined && { status: body.status }),
-      ...(body.price !== undefined && { price: Number(body.price) }),
-      ...(body.stock !== undefined && { stock: Number(body.stock) }),
-      ...(body.description !== undefined && { description: body.description }),
-      updatedAt: now,
-    };
-
-    products[index] = updatedProduct;
-
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 300));
-
-    return NextResponse.json(updatedProduct);
-  } catch (error) {
-    return NextResponse.json(
-      { message: 'Invalid request body' },
-      { status: 400 }
-    );
-  }
+  const res = await fetch(`${BACKEND}/api/products/${id}`, {
+    headers: { ...cookie(request) },
+  });
+  const data = await res.json().catch(() => ({}));
+  return NextResponse.json(data, {
+    status: res.status,
+    headers: { 'Cache-Control': 'private, max-age=60, stale-while-revalidate=300' },
+  });
 }
 
-// DELETE /api/products/[id] - Delete a product
-export async function DELETE(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+// PUT /api/products/[id]
+export async function PUT(request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
-  const productId = parseInt(id, 10);
+  const body = await request.text();
+  const res = await fetch(`${BACKEND}/api/products/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...cookie(request) },
+    body,
+  });
+  const data = await res.json().catch(() => ({}));
+  return NextResponse.json(data, { status: res.status });
+}
 
-  if (isNaN(productId)) {
-    return NextResponse.json(
-      { message: 'Invalid product ID' },
-      { status: 400 }
-    );
-  }
-
-  const index = products.findIndex((p) => p.id === productId);
-
-  if (index === -1) {
-    return NextResponse.json(
-      { message: 'Product not found' },
-      { status: 404 }
-    );
-  }
-
-  // Remove product from array
-  products.splice(index, 1);
-
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 200));
-
-  return new NextResponse(null, { status: 204 });
+// DELETE /api/products/[id]
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  const { id } = await params;
+  const res = await fetch(`${BACKEND}/api/products/${id}`, {
+    method: 'DELETE',
+    headers: { ...cookie(request) },
+  });
+  if (res.status === 204) return new NextResponse(null, { status: 204 });
+  const data = await res.json().catch(() => ({}));
+  return NextResponse.json(data, { status: res.status });
 }

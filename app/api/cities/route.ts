@@ -1,20 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
-  // Example API that uses different field names (name/id instead of label/value)
-  const cities = [
-    { id: 'nyc', name: 'New York City', country: 'US' },
-    { id: 'lon', name: 'London', country: 'UK' },
-    { id: 'tok', name: 'Tokyo', country: 'JP' },
-    { id: 'par', name: 'Paris', country: 'FR' },
-    { id: 'ber', name: 'Berlin', country: 'DE' },
-    { id: 'syd', name: 'Sydney', country: 'AU' },
-    { id: 'tor', name: 'Toronto', country: 'CA' },
-    { id: 'mum', name: 'Mumbai', country: 'IN' },
-  ];
+const BACKEND = process.env.BACKEND_API_URL ?? '';
 
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  return NextResponse.json(cities);
+export async function GET(request: NextRequest) {
+  const res = await fetch(`${BACKEND}/api/cities`, {
+    headers: {
+      ...(request.headers.get('cookie') ? { cookie: request.headers.get('cookie')! } : {}),
+    },
+  });
+  const data = await res.json().catch(() => ({}));
+  return NextResponse.json(data, {
+    status: res.status,
+    headers: { 'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400' },
+  });
 }

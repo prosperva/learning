@@ -1,34 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { attachments } from '../route';
 
-type RouteParams = {
-  params: Promise<{ id: string; attachmentId: string }>;
-};
+const BACKEND = process.env.BACKEND_API_URL ?? '';
+
+type RouteParams = { params: Promise<{ id: string; attachmentId: string }> };
+
+function cookie(request: NextRequest) {
+  const c = request.headers.get('cookie');
+  return c ? { cookie: c } : {};
+}
 
 // DELETE /api/products/[id]/attachments/[attachmentId]
-export async function DELETE(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const { id, attachmentId } = await params;
-  const productId = parseInt(id, 10);
-
-  if (isNaN(productId)) {
-    return NextResponse.json({ message: 'Invalid product ID' }, { status: 400 });
-  }
-
-  const index = attachments.findIndex(
-    (a) => a.id === attachmentId && a.productId === productId
-  );
-
-  if (index === -1) {
-    return NextResponse.json({ message: 'Attachment not found' }, { status: 404 });
-  }
-
-  // In production: also delete the actual file from storage
-  attachments.splice(index, 1);
-
-  await new Promise((resolve) => setTimeout(resolve, 200));
-
-  return new NextResponse(null, { status: 204 });
+  const res = await fetch(`${BACKEND}/api/products/${id}/attachments/${attachmentId}`, {
+    method: 'DELETE',
+    headers: { ...cookie(request) },
+  });
+  if (res.status === 204) return new NextResponse(null, { status: 204 });
+  const data = await res.json().catch(() => ({}));
+  return NextResponse.json(data, { status: res.status });
 }

@@ -1,19 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
-  const categories = [
-    { label: 'Electronics', value: 'electronics' },
-    { label: 'Clothing', value: 'clothing' },
-    { label: 'Books', value: 'books' },
-    { label: 'Home & Garden', value: 'home-garden' },
-    { label: 'Sports & Outdoors', value: 'sports' },
-    { label: 'Toys & Games', value: 'toys' },
-    { label: 'Food & Beverages', value: 'food' },
-    { label: 'Health & Beauty', value: 'health' },
-  ];
+const BACKEND = process.env.BACKEND_API_URL ?? '';
 
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  return NextResponse.json(categories);
+export async function GET(request: NextRequest) {
+  const res = await fetch(`${BACKEND}/api/categories`, {
+    headers: {
+      ...(request.headers.get('cookie') ? { cookie: request.headers.get('cookie')! } : {}),
+    },
+  });
+  const data = await res.json().catch(() => ({}));
+  return NextResponse.json(data, {
+    status: res.status,
+    headers: { 'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400' },
+  });
 }

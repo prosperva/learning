@@ -1,122 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { products } from '../route';
 
-// Interface for search request body
-interface SearchParams {
-  page: number;
-  pageSize: number;
-  sortField?: string;
-  sortOrder?: 'asc' | 'desc';
-  search?: string;
-  category?: string;
-  status?: string;
-  priceRange?: string;
-  dateFrom?: string;
-  dateTo?: string;
-  // Support for additional dynamic filters
-  [key: string]: any;
-}
+const BACKEND = process.env.BACKEND_API_URL ?? '';
 
-// POST /api/products/search - Search products with JSON body
 export async function POST(request: NextRequest) {
-  try {
-    const body: SearchParams = await request.json();
-
-    // Pagination with defaults
-    const page = body.page ?? 0;
-    const pageSize = body.pageSize ?? 25;
-
-    // Sorting with defaults
-    const sortField = body.sortField || 'id';
-    const sortOrder = body.sortOrder || 'asc';
-
-    // Filters from JSON body
-    const search = body.search?.toLowerCase();
-    const category = body.category;
-    const status = body.status;
-    const priceRange = body.priceRange;
-    const dateFrom = body.dateFrom;
-    const dateTo = body.dateTo;
-
-    // Apply filters
-    let filtered = [...products];
-
-    if (search) {
-      filtered = filtered.filter(
-        (p) =>
-          p.name.toLowerCase().includes(search) ||
-          p.description.toLowerCase().includes(search)
-      );
-    }
-
-    if (category) {
-      filtered = filtered.filter((p) => p.category === category);
-    }
-
-    if (status) {
-      filtered = filtered.filter((p) => p.status === status);
-    }
-
-    if (priceRange) {
-      const [min, max] = priceRange.split('-').map(Number);
-      if (!isNaN(min) && !isNaN(max)) {
-        filtered = filtered.filter((p) => p.price >= min && p.price <= max);
-      } else if (!isNaN(min)) {
-        filtered = filtered.filter((p) => p.price >= min);
-      }
-    }
-
-    if (dateFrom) {
-      const fromDate = new Date(dateFrom);
-      filtered = filtered.filter((p) => new Date(p.createdAt) >= fromDate);
-    }
-
-    if (dateTo) {
-      const toDate = new Date(dateTo);
-      filtered = filtered.filter((p) => new Date(p.createdAt) <= toDate);
-    }
-
-    // Apply sorting
-    type ProductKey = 'id' | 'name' | 'category' | 'status' | 'price' | 'stock' | 'description' | 'createdAt' | 'updatedAt';
-
-    filtered.sort((a, b) => {
-      const aVal = a[sortField as ProductKey];
-      const bVal = b[sortField as ProductKey];
-
-      if (aVal === undefined || bVal === undefined) return 0;
-
-      let comparison = 0;
-      if (typeof aVal === 'string' && typeof bVal === 'string') {
-        comparison = aVal.localeCompare(bVal);
-      } else if (typeof aVal === 'number' && typeof bVal === 'number') {
-        comparison = aVal - bVal;
-      } else {
-        comparison = String(aVal) < String(bVal) ? -1 : 1;
-      }
-
-      return sortOrder === 'asc' ? comparison : -comparison;
-    });
-
-    // Calculate pagination
-    const total = filtered.length;
-    const totalPages = Math.ceil(total / pageSize);
-    const start = page * pageSize;
-    const paginated = filtered.slice(start, start + pageSize);
-
-    // Simulate network delay for realistic behavior
-    await new Promise((resolve) => setTimeout(resolve, 200));
-
-    return NextResponse.json({
-      data: paginated,
-      total,
-      page,
-      pageSize,
-      totalPages,
-    });
-  } catch (error) {
-    return NextResponse.json(
-      { message: 'Invalid request body' },
-      { status: 400 }
-    );
-  }
+  const body = await request.text();
+  const res = await fetch(`${BACKEND}/api/products/search`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(request.headers.get('cookie') ? { cookie: request.headers.get('cookie')! } : {}),
+    },
+    body,
+  });
+  const data = await res.json().catch(() => ({ message: 'Invalid request body' }));
+  return NextResponse.json(data, { status: res.status });
 }

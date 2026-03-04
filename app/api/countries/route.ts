@@ -1,21 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
-  const countries = [
-    { label: 'United States', value: 'us' },
-    { label: 'Canada', value: 'ca' },
-    { label: 'United Kingdom', value: 'uk' },
-    { label: 'Germany', value: 'de' },
-    { label: 'France', value: 'fr' },
-    { label: 'Japan', value: 'jp' },
-    { label: 'Australia', value: 'au' },
-    { label: 'Brazil', value: 'br' },
-    { label: 'India', value: 'in' },
-    { label: 'China', value: 'cn' },
-  ];
+const BACKEND = process.env.BACKEND_API_URL ?? '';
 
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  return NextResponse.json(countries);
+export async function GET(request: NextRequest) {
+  const res = await fetch(`${BACKEND}/api/countries`, {
+    headers: {
+      ...(request.headers.get('cookie') ? { cookie: request.headers.get('cookie')! } : {}),
+    },
+  });
+  const data = await res.json().catch(() => ({}));
+  return NextResponse.json(data, {
+    status: res.status,
+    headers: { 'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400' },
+  });
 }

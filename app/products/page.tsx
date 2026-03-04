@@ -130,6 +130,7 @@ export default function ProductsPage() {
     state,
     updateState,
     navigateTo,
+    prefetchRoute,
     setSortModel,
     setColumnVisibility,
     setSelectedRows,
@@ -319,7 +320,10 @@ export default function ProductsPage() {
                         e.stopPropagation();
                         handleEditClick(params.row);
                       }}
-                      onMouseEnter={() => prefetchProduct(params.row.id)}
+                      onMouseEnter={() => {
+                        prefetchProduct(params.row.id);
+                        prefetchRoute(`/products/edit/${params.row.id}`);
+                      }}
                     >
                       Edit
                     </Button>
