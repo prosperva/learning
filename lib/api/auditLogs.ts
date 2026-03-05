@@ -22,17 +22,17 @@ export interface AuditLogPagedResult {
 }
 
 export interface AuditLogsParams {
-  tableName: string;
+  entityKey: string;
   recordId: string | number;
   page?: number;
   pageSize?: number;
 }
 
 export async function fetchAuditLogs(params: AuditLogsParams): Promise<AuditLogPagedResult> {
-  const { tableName, recordId, page = 0, pageSize = 500 } = params;
+  const { entityKey, recordId, page = 0, pageSize = 500 } = params;
 
   const response = await fetch(
-    `/api/audit/${tableName}/${recordId}?page=${page}&pageSize=${pageSize}`,
+    `/api/audit/${entityKey}/${recordId}?page=${page}&pageSize=${pageSize}`,
     { credentials: 'include' }
   );
 

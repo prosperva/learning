@@ -472,7 +472,7 @@ export default function ProductEditPage() {
             </Paper>
           )}
           {/* Audit History */}
-          <AuditHistoryCompact tableName="Product" recordId={id} />
+          <AuditHistoryCompact recordId={id} />
         </>
       )}
 

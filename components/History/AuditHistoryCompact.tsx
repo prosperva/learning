@@ -1,63 +1,11 @@
 // components/AuditHistoryCompact.tsx
 "use client";
 import { useState, useMemo } from "react";
-// import { useAuditLogs } from "@/hooks/useAuditLogs";
-import type { AuditLog, AuditChange } from "@/lib/api/auditLogs";
+import { usePathname } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { fetchAuditLogs } from "@/lib/api/auditLogs";
+import type { AuditLog } from "@/lib/api/auditLogs";
 
-// ---------- Mock data ----------
-const MOCK_ROWS: AuditLog[] = [
-  {
-    id: 1,
-    tableName: "Product",
-    recordId: "42",
-    operation: "Added",
-    modifiedBy: "alice.johnson@company.com",
-    modifiedDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    changes: {
-      Name:        { old: null,         new: "Wireless Headphones" },
-      Category:    { old:null,         new:"Electronics" },
-      Price:       { old:null,         new:"79.99" },
-      Stock:       { old:null,         new:"250" },
-      Status:      { old:null,         new:"active" },
-    },
-  },
-  {
-    id: 2,
-    tableName: "Product",
-    recordId: "42",
-    operation: "Modified",
-    modifiedBy: "bob.smith@company.com",
-    modifiedDate: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-    changes: {
-      Price:  { old:"79.99",  new:"64.99" },
-      Stock:  { old:"250",    new:"198" },
-    },
-  },
-  {
-    id: 3,
-    tableName: "Product",
-    recordId: "42",
-    operation: "Modified",
-    modifiedBy: "alice.johnson@company.com",
-    modifiedDate: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
-    changes: {
-      Status:      { old:"active",           new:"inactive" },
-      Description: { old:"Great headphones", new:"Award-winning noise-cancelling headphones with 30h battery." },
-    },
-  },
-  {
-    id: 4,
-    tableName: "Product",
-    recordId: "42",
-    operation: "Modified",
-    modifiedBy: "carol.wang@company.com",
-    modifiedDate: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
-    changes: {
-      Status:   { old:"inactive", new:"active" },
-      Featured: { old:"false",    new:"true" },
-    },
-  },
-];
 import {
   Card,
   CardHeader,
@@ -93,13 +41,16 @@ import ClearIcon from "@mui/icons-material/Clear";
 
 // ---------- Types ----------
 interface Props {
-  tableName: string;
   recordId: string | number;
+  entityKey?: string;  // override when URL segment doesn't match the table name
   title?: string;
 }
 
 type SortField = "modifiedDate" | "modifiedBy" | "operation";
 type SortDir = "asc" | "desc";
+
+interface AuditFieldConfig { fieldName: string; displayName: string; isEnabled: boolean; }
+interface AuditTableConfig { tableName: string; fields: AuditFieldConfig[]; }
 
 // ---------- Helpers ----------
 const operationColor = (op: string): "success" | "warning" | "error" | "default" => {
@@ -159,7 +110,13 @@ function EmptyBadge() {
 }
 
 // ---------- Expandable Row ----------
-function AuditRow({ row }: { row: AuditLog }) {
+function AuditRow({
+  row,
+  displayNameMap,
+}: {
+  row: AuditLog;
+  displayNameMap: Map<string, string>;
+}) {
   const [open, setOpen] = useState(false);
   const fieldCount = Object.keys(row.changes).length;
 
@@ -170,14 +127,12 @@ function AuditRow({ row }: { row: AuditLog }) {
         onClick={() => setOpen((p) => !p)}
         sx={{ cursor: "pointer", "& > *": { borderBottom: open ? "none" : undefined } }}
       >
-        {/* Expand toggle */}
         <TableCell padding="checkbox">
           <IconButton size="small">
             {open ? <KeyboardArrowDownIcon fontSize="small" /> : <KeyboardArrowRightIcon fontSize="small" />}
           </IconButton>
         </TableCell>
 
-        {/* Date / Time */}
         <TableCell>
           <Tooltip title={new Date(row.modifiedDate).toLocaleString()} arrow placement="top">
             <Typography variant="body2" sx={{ whiteSpace: "nowrap" }}>
@@ -186,28 +141,19 @@ function AuditRow({ row }: { row: AuditLog }) {
           </Tooltip>
         </TableCell>
 
-        {/* Changed By — hidden on mobile, shown in detail row instead */}
         <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
           <Box display="flex" alignItems="center" gap={1}>
-            <Avatar
-              sx={{ width: 28, height: 28, fontSize: 11, bgcolor: avatarColor(row.modifiedBy) }}
-            >
+            <Avatar sx={{ width: 28, height: 28, fontSize: 11, bgcolor: avatarColor(row.modifiedBy) }}>
               {getInitials(row.modifiedBy)}
             </Avatar>
             <Typography variant="body2" noWrap>{row.modifiedBy}</Typography>
           </Box>
         </TableCell>
 
-        {/* Operation */}
         <TableCell>
-          <Chip
-            label={row.operation}
-            color={operationColor(row.operation)}
-            size="small"
-          />
+          <Chip label={row.operation} color={operationColor(row.operation)} size="small" />
         </TableCell>
 
-        {/* Fields count — hidden on mobile */}
         <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
           <Chip
             label={`${fieldCount} field${fieldCount !== 1 ? "s" : ""}`}
@@ -218,22 +164,17 @@ function AuditRow({ row }: { row: AuditLog }) {
         </TableCell>
       </TableRow>
 
-      {/* Inline detail row */}
       <TableRow>
         <TableCell colSpan={5} sx={{ py: 0, bgcolor: "grey.50" }}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box sx={{ px: { xs: 1, sm: 4 }, py: 1.5 }}>
-
-              {/* Changed By — only visible on mobile since column is hidden */}
               <Box
                 display="flex"
                 alignItems="center"
                 gap={1}
                 sx={{ display: { xs: "flex", sm: "none" }, mb: 1.5 }}
               >
-                <Avatar
-                  sx={{ width: 24, height: 24, fontSize: 10, bgcolor: avatarColor(row.modifiedBy) }}
-                >
+                <Avatar sx={{ width: 24, height: 24, fontSize: 10, bgcolor: avatarColor(row.modifiedBy) }}>
                   {getInitials(row.modifiedBy)}
                 </Avatar>
                 <Typography variant="caption" color="text.secondary">{row.modifiedBy}</Typography>
@@ -245,48 +186,28 @@ function AuditRow({ row }: { row: AuditLog }) {
                     <TableCell sx={{ fontWeight: "bold", width: "30%", color: "text.secondary", fontSize: 12 }}>
                       FIELD
                     </TableCell>
-                    {/* On mobile: show Before/After stacked in one column */}
-                    <TableCell
-                      sx={{
-                        fontWeight: "bold",
-                        color: "error.main",
-                        fontSize: 12,
-                        display: { xs: "none", sm: "table-cell" },
-                      }}
-                    >
+                    <TableCell sx={{ fontWeight: "bold", color: "error.main", fontSize: 12, display: { xs: "none", sm: "table-cell" } }}>
                       BEFORE
                     </TableCell>
-                    <TableCell
-                      sx={{
-                        fontWeight: "bold",
-                        color: "success.main",
-                        fontSize: 12,
-                        display: { xs: "none", sm: "table-cell" },
-                      }}
-                    >
+                    <TableCell sx={{ fontWeight: "bold", color: "success.main", fontSize: 12, display: { xs: "none", sm: "table-cell" } }}>
                       AFTER
                     </TableCell>
-                    {/* Mobile-only combined column */}
-                    <TableCell
-                      sx={{
-                        fontWeight: "bold",
-                        fontSize: 12,
-                        color: "text.secondary",
-                        display: { xs: "table-cell", sm: "none" },
-                      }}
-                    >
+                    <TableCell sx={{ fontWeight: "bold", fontSize: 12, color: "text.secondary", display: { xs: "table-cell", sm: "none" } }}>
                       CHANGE
                     </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {Object.entries(row.changes).map(([field, diff]) => (
-                    <TableRow key={field} sx={{ "&:last-child td": { border: 0 } }}>
+                  {Object.entries(row.changes).map(([fieldName, diff]) => (
+                    <TableRow key={fieldName} sx={{ "&:last-child td": { border: 0 } }}>
                       <TableCell>
-                        <Typography variant="body2" fontWeight="medium">{field}</Typography>
+                        <Tooltip title={fieldName} placement="top" arrow>
+                          <Typography variant="body2" fontWeight="medium">
+                            {displayNameMap.get(fieldName) ?? fieldName}
+                          </Typography>
+                        </Tooltip>
                       </TableCell>
 
-                      {/* Desktop: separate Before / After cells */}
                       <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
                         {diff.old === null ? (
                           <EmptyBadge />
@@ -306,7 +227,6 @@ function AuditRow({ row }: { row: AuditLog }) {
                         )}
                       </TableCell>
 
-                      {/* Mobile: stacked Before → After in one cell */}
                       <TableCell sx={{ display: { xs: "table-cell", sm: "none" } }}>
                         <Box display="flex" flexDirection="column" gap={0.25}>
                           {diff.old === null ? (
@@ -339,23 +259,37 @@ function AuditRow({ row }: { row: AuditLog }) {
 }
 
 // ---------- Component ----------
-export default function AuditHistoryCompact({ tableName, recordId, title = "Change History" }: Props) {
+export default function AuditHistoryCompact({ recordId, entityKey: entityKeyProp, title = "Change History" }: Props) {
+  const pathname = usePathname();
+  const entityKey = entityKeyProp ?? pathname.split('/')[1];
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
-
-  // Sorting
   const [sortField, setSortField] = useState<SortField>("modifiedDate");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
-
-  // Filters
   const [quickFilter, setQuickFilter] = useState("");
   const [operationFilter, setOperationFilter] = useState("all");
 
-  // const { data, isLoading, isError } = useAuditLogs({ tableName, recordId: String(recordId) });
-  // const rows: AuditLog[] = data?.data ?? [];
-  const isLoading = false;
-  const isError = false;
-  const rows: AuditLog[] = MOCK_ROWS;
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["audit", entityKey, String(recordId)],
+    queryFn: () => fetchAuditLogs({ entityKey, recordId }),
+    enabled: !!entityKey && recordId !== "",
+  });
+
+  // Audit config — for display name resolution
+  const { data: configData } = useQuery<AuditTableConfig[]>({
+    queryKey: ["audit-config"],
+    queryFn: () => fetch("/api/audit/config").then(r => r.json()),
+    staleTime: 60_000,
+  });
+
+  const displayNameMap = useMemo<Map<string, string>>(() => {
+    const table = configData?.find(t => t.tableName.toLowerCase() === entityKey.toLowerCase());
+    if (!table) return new Map();
+    return new Map(table.fields.map(f => [f.fieldName, f.displayName]));
+  }, [configData, entityKey]);
+
+  const rows: AuditLog[] = data?.data ?? [];
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -380,12 +314,10 @@ export default function AuditHistoryCompact({ tableName, recordId, title = "Chan
   const processedRows = useMemo(() => {
     let filtered = rows;
 
-    // Operation filter
     if (operationFilter !== "all") {
       filtered = filtered.filter((r) => r.operation === operationFilter);
     }
 
-    // Quick filter — matches modifiedBy, operation, or any changed field name/value
     if (quickFilter.trim()) {
       const q = quickFilter.trim().toLowerCase();
       filtered = filtered.filter((r) => {
@@ -394,13 +326,13 @@ export default function AuditHistoryCompact({ tableName, recordId, title = "Chan
         return Object.entries(r.changes).some(
           ([field, diff]) =>
             field.toLowerCase().includes(q) ||
+            (displayNameMap.get(field) ?? "").toLowerCase().includes(q) ||
             diff.old?.toLowerCase().includes(q) ||
             diff.new?.toLowerCase().includes(q)
         );
       });
     }
 
-    // Sort
     filtered = [...filtered].sort((a, b) => {
       let cmp = 0;
       if (sortField === "modifiedDate") {
@@ -414,10 +346,9 @@ export default function AuditHistoryCompact({ tableName, recordId, title = "Chan
     });
 
     return filtered;
-  }, [rows, quickFilter, operationFilter, sortField, sortDir]);
+  }, [rows, quickFilter, operationFilter, sortField, sortDir, displayNameMap]);
 
   const paginated = processedRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
-
   const hasActiveFilters = quickFilter.trim() !== "" || operationFilter !== "all";
 
   return (
@@ -444,7 +375,6 @@ export default function AuditHistoryCompact({ tableName, recordId, title = "Chan
           </Typography>
         ) : (
           <>
-            {/* Toolbar */}
             <Box
               sx={{
                 px: 2,
@@ -457,7 +387,6 @@ export default function AuditHistoryCompact({ tableName, recordId, title = "Chan
                 borderColor: "divider",
               }}
             >
-              {/* Quick search */}
               <TextField
                 size="small"
                 placeholder="Search user, field, value…"
@@ -482,7 +411,6 @@ export default function AuditHistoryCompact({ tableName, recordId, title = "Chan
                 }}
               />
 
-              {/* Operation filter */}
               <FormControl size="small" sx={{ minWidth: 140 }}>
                 <InputLabel>Operation</InputLabel>
                 <Select
@@ -497,7 +425,6 @@ export default function AuditHistoryCompact({ tableName, recordId, title = "Chan
                 </Select>
               </FormControl>
 
-              {/* Result count */}
               <Typography variant="caption" color="text.secondary" sx={{ ml: "auto", whiteSpace: "nowrap" }}>
                 {hasActiveFilters
                   ? `${processedRows.length} of ${rows.length} records`
@@ -556,7 +483,9 @@ export default function AuditHistoryCompact({ tableName, recordId, title = "Chan
                       </TableCell>
                     </TableRow>
                   ) : (
-                    paginated.map((row) => <AuditRow key={row.id} row={row} />)
+                    paginated.map((row) => (
+                      <AuditRow key={row.id} row={row} displayNameMap={displayNameMap} />
+                    ))
                   )}
                 </TableBody>
               </Table>

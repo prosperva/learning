@@ -44,6 +44,10 @@ builder.Services.AddScoped<IProductService,     ProductService>();
 builder.Services.AddScoped<IAttachmentService,  AttachmentService>();
 builder.Services.AddScoped<IAuditService,       AuditService>();
 builder.Services.AddScoped<ISavedSearchService, SavedSearchService>();
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<AuditConfigCache>();
+builder.Services.AddSingleton<AuditEntityRegistry>();
+builder.Services.AddScoped<IAuditConfigService, AuditConfigService>();
 
 // ── AutoMapper ────────────────────────────────────────────────────────────────
 builder.Services.AddAutoMapper(typeof(MappingProfile));
@@ -91,8 +95,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.EnsureCreated();
 
-    // AuditLogs is excluded from EF migrations but EnsureCreated creates it from the model.
-    // Add the index separately if it doesn't exist.
+    // EnsureCreated only runs on a fresh DB. For existing DBs, create new tables idempotently.
     db.Database.ExecuteSqlRaw("""
         IF NOT EXISTS (
             SELECT 1 FROM sys.indexes
@@ -102,6 +105,18 @@ using (var scope = app.Services.CreateScope())
         BEGIN
             CREATE INDEX IX_AuditLogs_Table_Record
                 ON AuditLogs (TableName, RecordId, ChangedAt DESC);
+        END
+
+        IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'AuditFieldConfigs')
+        BEGIN
+            CREATE TABLE AuditFieldConfigs (
+                Id          INT IDENTITY(1,1) PRIMARY KEY,
+                TableName   NVARCHAR(128) NOT NULL,
+                FieldName   NVARCHAR(128) NOT NULL,
+                IsEnabled   BIT NOT NULL DEFAULT 0,
+                DisplayName NVARCHAR(256) NULL,
+                CONSTRAINT UQ_AuditFieldConfigs_Table_Field UNIQUE (TableName, FieldName)
+            );
         END
         """);
 }

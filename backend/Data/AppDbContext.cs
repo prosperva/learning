@@ -5,16 +5,21 @@ namespace CommonFields.API.Data;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
-    public DbSet<Product>      Products      => Set<Product>();
-    public DbSet<Attachment>   Attachments   => Set<Attachment>();
-    public DbSet<AuditLog>     AuditLogs     => Set<AuditLog>();
-    public DbSet<SavedSearch>  SavedSearches => Set<SavedSearch>();
+    public DbSet<Product>          Products          => Set<Product>();
+    public DbSet<Attachment>       Attachments       => Set<Attachment>();
+    public DbSet<AuditLog>         AuditLogs         => Set<AuditLog>();
+    public DbSet<SavedSearch>      SavedSearches     => Set<SavedSearch>();
+    public DbSet<AuditFieldConfig> AuditFieldConfigs => Set<AuditFieldConfig>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
 
         builder.Entity<AuditLog>().ToTable("AuditLogs");
+
+        builder.Entity<AuditFieldConfig>()
+            .HasIndex(c => new { c.TableName, c.FieldName })
+            .IsUnique();
 
         // Cascade delete attachments when product is deleted
         builder.Entity<Product>()
