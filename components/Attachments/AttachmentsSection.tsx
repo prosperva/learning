@@ -22,21 +22,7 @@ import {
   AttachFile as AttachFileIcon,
   InsertDriveFile as FileIcon,
 } from '@mui/icons-material';
-
-export interface Attachment {
-  id: string;
-  fileName: string;
-  fileSize: number;
-  mimeType: string;
-  uploadedAt: string;
-  url: string;
-}
-
-interface AttachmentsSectionProps {
-  attachments: Attachment[];
-  onAdd: (file: File) => void;
-  onDelete: (id: string) => void;
-}
+import type { AttachmentsSectionProps } from './types';
 
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 B';

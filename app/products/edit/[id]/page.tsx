@@ -32,7 +32,7 @@ import { ArrowBack as ArrowBackIcon, Save as SaveIcon, OpenInNew as OpenInNewIco
 import { useGridManagement } from '@/hooks/useGridManagement';
 import { useProduct, useUpdateProduct, type UpdateProductInput } from '@/hooks/useProducts';
 import { useCategories, useDropdownOptions } from '@/hooks/useDropdownOptions';
-import AttachmentsSection, { type Attachment } from '@/components/AttachmentsSection';
+import AttachmentsSection, { type Attachment } from '@/components/Attachments';
 import AuditHistoryCompact from '@/components/History/AuditHistoryCompact';
 // import { LockService } from '@/lib/lockService';
 
