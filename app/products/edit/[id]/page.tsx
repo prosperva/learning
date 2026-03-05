@@ -32,7 +32,7 @@ import { ArrowBack as ArrowBackIcon, Save as SaveIcon, OpenInNew as OpenInNewIco
 import { useGridManagement } from '@/hooks/useGridManagement';
 import { useProduct, useUpdateProduct, type UpdateProductInput } from '@/hooks/useProducts';
 import { useCategories, useDropdownOptions } from '@/hooks/useDropdownOptions';
-import AttachmentsSection from '@/components/AttachmentsSection';
+import AttachmentsSection, { type Attachment } from '@/components/AttachmentsSection';
 import AuditHistoryCompact from '@/components/History/AuditHistoryCompact';
 // import { LockService } from '@/lib/lockService';
 
@@ -127,6 +127,9 @@ export default function ProductEditPage() {
   // Defer secondary sections (attachments, audit) until after the form has painted.
   // This lets the critical form render first without competing API requests.
   const [showSecondary, setShowSecondary] = useState(false);
+  const [attachments, setAttachments] = useState<Attachment[]>([
+    { id: '1', fileName: 'product-spec.pdf', fileSize: 204800, mimeType: 'application/pdf', uploadedAt: '2025-01-15T10:00:00Z', url: '#' },
+  ]);
   useEffect(() => {
     if (!isLoading) {
       const t = setTimeout(() => setShowSecondary(true), 0);
@@ -425,7 +428,20 @@ export default function ProductEditPage() {
             />
 
             {/* Attachments — deferred until after form paints */}
-            {showSecondary && <AttachmentsSection productId={id} />}
+            {showSecondary && (
+              <AttachmentsSection
+                attachments={attachments}
+                onAdd={file => setAttachments(prev => [...prev, {
+                  id: crypto.randomUUID(),
+                  fileName: file.name,
+                  fileSize: file.size,
+                  mimeType: file.type || 'application/octet-stream',
+                  uploadedAt: new Date().toISOString(),
+                  url: URL.createObjectURL(file),
+                }])}
+                onDelete={id => setAttachments(prev => prev.filter(a => a.id !== id))}
+              />
+            )}
 
             <Divider />
 

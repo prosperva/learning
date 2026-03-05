@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import {
   Box,
   Typography,
@@ -23,7 +23,7 @@ import {
   InsertDriveFile as FileIcon,
 } from '@mui/icons-material';
 
-interface Attachment {
+export interface Attachment {
   id: string;
   fileName: string;
   fileSize: number;
@@ -33,7 +33,9 @@ interface Attachment {
 }
 
 interface AttachmentsSectionProps {
-  productId: number;
+  attachments: Attachment[];
+  onAdd: (file: File) => void;
+  onDelete: (id: string) => void;
 }
 
 function formatFileSize(bytes: number): string {
@@ -44,39 +46,15 @@ function formatFileSize(bytes: number): string {
   return `${size.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
-export default function AttachmentsSection({ productId: _ }: AttachmentsSectionProps) {
+export default function AttachmentsSection({ attachments, onAdd, onDelete }: AttachmentsSectionProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [attachments, setAttachments] = useState<Attachment[]>([
-    {
-      id: '1',
-      fileName: 'product-spec.pdf',
-      fileSize: 204800,
-      mimeType: 'application/pdf',
-      uploadedAt: '2025-01-15T10:00:00Z',
-      url: '#',
-    },
-  ]);
-
-  const handleAddClick = () => fileInputRef.current?.click();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    setAttachments(prev => [...prev, {
-      id: crypto.randomUUID(),
-      fileName: file.name,
-      fileSize: file.size,
-      mimeType: file.type || 'application/octet-stream',
-      uploadedAt: new Date().toISOString(),
-      url: URL.createObjectURL(file),
-    }]);
-
+    onAdd(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
-
-  const handleDelete = (attachmentId: string) =>
-    setAttachments(prev => prev.filter(a => a.id !== attachmentId));
 
   return (
     <Paper elevation={2} sx={{ p: 3, mt: 3 }}>
@@ -91,7 +69,7 @@ export default function AttachmentsSection({ productId: _ }: AttachmentsSectionP
             ({attachments.length})
           </Typography>
         </Box>
-        <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddClick} size="small">
+        <Button variant="outlined" startIcon={<AddIcon />} onClick={() => fileInputRef.current?.click()} size="small">
           Add
         </Button>
       </Box>
@@ -143,17 +121,12 @@ export default function AttachmentsSection({ productId: _ }: AttachmentsSectionP
                   </TableCell>
                   <TableCell align="right">
                     <Tooltip title="Download attachment">
-                      <IconButton
-                        size="small"
-                        component="a"
-                        href={attachment.url}
-                        download={attachment.fileName}
-                      >
+                      <IconButton size="small" component="a" href={attachment.url} download={attachment.fileName}>
                         <DownloadIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Delete attachment">
-                      <IconButton size="small" color="error" onClick={() => handleDelete(attachment.id)}>
+                      <IconButton size="small" color="error" onClick={() => onDelete(attachment.id)}>
                         <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
