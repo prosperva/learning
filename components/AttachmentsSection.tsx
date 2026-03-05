@@ -13,9 +13,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  CircularProgress,
-  Alert,
-  Skeleton,
   Tooltip,
 } from '@mui/material';
 import {
@@ -25,8 +22,15 @@ import {
   AttachFile as AttachFileIcon,
   InsertDriveFile as FileIcon,
 } from '@mui/icons-material';
-import { useAttachments, useUploadAttachment, useDeleteAttachment } from '@/hooks/useAttachments';
-import type { Attachment } from '@/hooks/useAttachments';
+
+interface Attachment {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  uploadedAt: string;
+  url: string;
+}
 
 interface AttachmentsSectionProps {
   productId: number;
@@ -40,47 +44,39 @@ function formatFileSize(bytes: number): string {
   return `${size.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
-export default function AttachmentsSection({ productId }: AttachmentsSectionProps) {
+export default function AttachmentsSection({ productId: _ }: AttachmentsSectionProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [attachments, setAttachments] = useState<Attachment[]>([
+    {
+      id: '1',
+      fileName: 'product-spec.pdf',
+      fileSize: 204800,
+      mimeType: 'application/pdf',
+      uploadedAt: '2025-01-15T10:00:00Z',
+      url: '#',
+    },
+  ]);
 
-  const {
-    data: attachmentsData,
-    isLoading,
-    isError,
-    error: fetchError,
-  } = useAttachments(productId);
+  const handleAddClick = () => fileInputRef.current?.click();
 
-  const uploadMutation = useUploadAttachment();
-  const deleteMutation = useDeleteAttachment();
-
-  const attachments = attachmentsData?.attachments ?? [];
-
-  const handleAddClick = () => {
-    setUploadError(null);
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    try {
-      await uploadMutation.mutateAsync({ productId, file });
-      setUploadError(null);
-    } catch (err) {
-      setUploadError(err instanceof Error ? err.message : 'Upload failed');
-    }
+    setAttachments(prev => [...prev, {
+      id: crypto.randomUUID(),
+      fileName: file.name,
+      fileSize: file.size,
+      mimeType: file.type || 'application/octet-stream',
+      uploadedAt: new Date().toISOString(),
+      url: URL.createObjectURL(file),
+    }]);
 
-    // Reset so the same file can be selected again
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleDelete = async (attachmentId: string) => {
-    await deleteMutation.mutateAsync({ productId, attachmentId });
-  };
+  const handleDelete = (attachmentId: string) =>
+    setAttachments(prev => prev.filter(a => a.id !== attachmentId));
 
   return (
     <Paper elevation={2} sx={{ p: 3, mt: 3 }}>
@@ -91,71 +87,27 @@ export default function AttachmentsSection({ productId }: AttachmentsSectionProp
           <Typography variant="h6" component="h2">
             Attachments
           </Typography>
-          {!isLoading && (
-            <Typography variant="body2" color="text.secondary">
-              ({attachments.length})
-            </Typography>
-          )}
+          <Typography variant="body2" color="text.secondary">
+            ({attachments.length})
+          </Typography>
         </Box>
-        <Button
-          variant="outlined"
-          startIcon={
-            uploadMutation.isPending ? (
-              <CircularProgress size={18} color="inherit" />
-            ) : (
-              <AddIcon />
-            )
-          }
-          onClick={handleAddClick}
-          disabled={uploadMutation.isPending}
-          size="small"
-        >
-          {uploadMutation.isPending ? 'Uploading...' : 'Add'}
+        <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddClick} size="small">
+          Add
         </Button>
       </Box>
 
       {/* Hidden file input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        onChange={handleFileChange}
-        style={{ display: 'none' }}
-      />
-
-      {/* Errors */}
-      {uploadError && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setUploadError(null)}>
-          {uploadError}
-        </Alert>
-      )}
-      {deleteMutation.isError && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          Failed to delete: {deleteMutation.error?.message || 'Unknown error'}
-        </Alert>
-      )}
-      {isError && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          Failed to load attachments: {(fetchError as Error)?.message || 'Unknown error'}
-        </Alert>
-      )}
-
-      {/* Loading */}
-      {isLoading && (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <Skeleton variant="rounded" height={40} />
-          <Skeleton variant="rounded" height={40} />
-        </Box>
-      )}
+      <input ref={fileInputRef} type="file" onChange={handleFileChange} style={{ display: 'none' }} />
 
       {/* Empty state */}
-      {!isLoading && attachments.length === 0 && (
+      {attachments.length === 0 && (
         <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
           No attachments yet. Click &quot;Add&quot; to upload a file.
         </Typography>
       )}
 
       {/* Attachments table */}
-      {!isLoading && attachments.length > 0 && (
+      {attachments.length > 0 && (
         <TableContainer>
           <Table size="small">
             <TableHead>
@@ -168,7 +120,7 @@ export default function AttachmentsSection({ productId }: AttachmentsSectionProp
               </TableRow>
             </TableHead>
             <TableBody>
-              {attachments.map((attachment: Attachment) => (
+              {attachments.map(attachment => (
                 <TableRow key={attachment.id} hover>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -179,14 +131,10 @@ export default function AttachmentsSection({ productId }: AttachmentsSectionProp
                     </Box>
                   </TableCell>
                   <TableCell>
-                    <Typography variant="body2">
-                      {formatFileSize(attachment.fileSize)}
-                    </Typography>
+                    <Typography variant="body2">{formatFileSize(attachment.fileSize)}</Typography>
                   </TableCell>
                   <TableCell>
-                    <Typography variant="body2" color="text.secondary">
-                      {attachment.mimeType}
-                    </Typography>
+                    <Typography variant="body2" color="text.secondary">{attachment.mimeType}</Typography>
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">
@@ -205,12 +153,7 @@ export default function AttachmentsSection({ productId }: AttachmentsSectionProp
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Delete attachment">
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => handleDelete(attachment.id)}
-                        disabled
-                      >
+                      <IconButton size="small" color="error" onClick={() => handleDelete(attachment.id)}>
                         <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
