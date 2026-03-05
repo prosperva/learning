@@ -8,6 +8,7 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   Chip,
   CircularProgress,
   Container,
@@ -20,11 +21,13 @@ import {
   TableHead,
   TableRow,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import SaveIcon from '@mui/icons-material/Save';
+import SearchIcon from '@mui/icons-material/Search';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -149,39 +152,75 @@ function TableSection({
   };
 
   const enabledCount = localFields.filter(f => f.isEnabled).length;
+  const allEnabled = enabledCount === localFields.length;
+  const someEnabled = enabledCount > 0 && !allEnabled;
+
+  const handleToggleAll = () =>
+    setLocalFields(prev => prev.map(f => ({ ...f, isEnabled: !allEnabled })));
+  const [fieldFilter, setFieldFilter] = useState('');
+  const sortedFields = [...localFields].sort((a, b) => Number(b.isEnabled) - Number(a.isEnabled));
+  const visibleFields = fieldFilter.trim()
+    ? sortedFields.filter(f =>
+        f.fieldName.toLowerCase().includes(fieldFilter.toLowerCase()) ||
+        f.displayName.toLowerCase().includes(fieldFilter.toLowerCase())
+      )
+    : sortedFields;
 
   return (
-    <Accordion key={table.tableName} defaultExpanded={false} disableGutters>
-      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+    <Accordion
+      key={table.tableName}
+      defaultExpanded={false}
+      disableGutters
+      sx={{ mb: 1, border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden', '&:before': { display: 'none' } }}
+    >
+      <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1 }}>
           <TableChartIcon fontSize="small" color="action" />
           <Typography fontWeight={500}>{table.tableName}</Typography>
-          <Typography variant="caption" color="text.secondary">
-            ({enabledCount}/{localFields.length} fields enabled)
-          </Typography>
+          <Chip
+            label={`${enabledCount} / ${localFields.length}`}
+            size="small"
+            variant="outlined"
+            color={enabledCount > 0 ? 'primary' : 'default'}
+          />
           {isDirty && (
-            <Chip
-              label={`${changedFields.length} unsaved`}
-              color="warning"
-              size="small"
-              sx={{ ml: 1 }}
-            />
+            <Chip label={`${changedFields.length} unsaved`} color="warning" size="small" />
           )}
         </Box>
       </AccordionSummary>
       <AccordionDetails sx={{ p: 0 }}>
+        {localFields.length > 8 && (
+          <Box sx={{ px: 2, pt: 1.5, pb: 1 }}>
+            <TextField
+              placeholder="Filter fields…"
+              size="small"
+              fullWidth
+              value={fieldFilter}
+              onChange={e => setFieldFilter(e.target.value)}
+              slotProps={{ input: { startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: 'text.disabled' }} /> } }}
+            />
+          </Box>
+        )}
         <Table size="small">
           <TableHead>
             <TableRow sx={{ bgcolor: 'grey.50' }}>
-              <TableCell sx={{ fontWeight: 600, width: 180 }}>Field</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Display Name</TableCell>
-              <TableCell sx={{ fontWeight: 600, width: 100 }} align="center">
-                Enabled
+              <TableCell sx={{ fontWeight: 600, width: 180, color: 'text.secondary', fontSize: 12 }}>FIELD</TableCell>
+              <TableCell sx={{ fontWeight: 600, color: 'text.secondary', fontSize: 12 }}>DISPLAY NAME</TableCell>
+              <TableCell sx={{ fontWeight: 600, width: 100, color: 'text.secondary', fontSize: 12 }} align="center">
+                <Tooltip title={allEnabled ? 'Disable all' : 'Enable all'}>
+                  <Checkbox
+                    size="small"
+                    checked={allEnabled}
+                    indeterminate={someEnabled}
+                    onChange={handleToggleAll}
+                    sx={{ p: 0.5 }}
+                  />
+                </Tooltip>
               </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {localFields.map(field => (
+            {visibleFields.map(field => (
               <FieldRow
                 key={field.fieldName}
                 field={field}
@@ -189,6 +228,13 @@ function TableSection({
                 onDisplayNameChange={name => handleDisplayNameChange(field.fieldName, name)}
               />
             ))}
+            {visibleFields.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={3} align="center" sx={{ color: 'text.secondary', py: 2 }}>
+                  No fields match &quot;{fieldFilter}&quot;.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
 
@@ -199,7 +245,14 @@ function TableSection({
         )}
 
         {isDirty && (
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, p: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
+            <Button
+              size="small"
+              onClick={() => setLocalFields(table.fields)}
+              disabled={isSaving}
+            >
+              Discard
+            </Button>
             <Button
               variant="contained"
               size="small"
@@ -220,11 +273,16 @@ function TableSection({
 
 export default function AuditConfigPage() {
   const [toast, setToast] = useState<string | null>(null);
+  const [filter, setFilter] = useState('');
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['audit-config'],
     queryFn: fetchConfig,
   });
+
+  const filtered = filter.trim()
+    ? data?.filter(t => t.tableName.toLowerCase().includes(filter.toLowerCase()))
+    : data;
 
   if (isLoading) {
     return (
@@ -256,7 +314,23 @@ export default function AuditConfigPage() {
         the data model — no setup required. Nothing is audited until you enable a field.
       </Typography>
 
-      {data?.map(table => (
+      <TextField
+        placeholder="Filter tables…"
+        size="small"
+        fullWidth
+        sx={{ mb: 2 }}
+        value={filter}
+        onChange={e => setFilter(e.target.value)}
+        slotProps={{ input: { startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: 'text.disabled' }} /> } }}
+      />
+
+      {filtered?.length === 0 && (
+        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+          No tables match &quot;{filter}&quot;.
+        </Typography>
+      )}
+
+      {filtered?.map(table => (
         <TableSection key={table.tableName} table={table} onSaved={msg => setToast(msg)} />
       ))}
 
