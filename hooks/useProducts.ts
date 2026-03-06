@@ -15,6 +15,7 @@ import {
   type Product,
   type ProductsResponse,
 } from '@/lib/api/products';
+import { auditLogKeys } from './useAuditLogs';
 
 // Query keys factory for consistent key management
 export const productKeys = {
@@ -85,10 +86,9 @@ export function useUpdateProduct() {
   return useMutation<Product, Error, { id: number; data: UpdateProductInput }>({
     mutationFn: ({ id, data }) => updateProduct(id, data),
     onSuccess: (updatedProduct) => {
-      // Update the specific product in cache
       queryClient.setQueryData(productKeys.detail(updatedProduct.id), updatedProduct);
-      // Invalidate all product lists to refetch with updated data
       queryClient.invalidateQueries({ queryKey: productKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: auditLogKeys.all });
     },
   });
 }

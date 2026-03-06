@@ -40,7 +40,6 @@ export function useAuditConfig() {
   return useQuery({
     queryKey: ['audit-config'],
     queryFn: fetchConfig,
-    staleTime: 60_000,
   });
 }
 

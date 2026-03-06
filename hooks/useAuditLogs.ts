@@ -15,7 +15,6 @@ export function useAuditLogs(
     queryKey: auditLogKeys.list(params),
     queryFn: () => fetchAuditLogs(params),
     placeholderData: keepPreviousData,
-    staleTime: 1 * 60 * 1000,
     enabled: options?.enabled ?? (!!params.tableName && !!params.recordId),
   });
 }
