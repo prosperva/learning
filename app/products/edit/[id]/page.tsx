@@ -17,6 +17,7 @@ import {
   Alert,
   Divider,
   Skeleton,
+  Snackbar,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -70,6 +71,7 @@ export default function ProductEditPage() {
   // const lockReleasedRef = useRef(false);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [toast, setToast] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
   // Only fetch categories when the picker modal is opened — avoids an unnecessary
   // network request on every page load since categories are rarely needed.
   const { data: categories = [], isLoading: categoriesLoading } = useCategories({ enabled: categoryModalOpen });
@@ -183,10 +185,10 @@ export default function ProductEditPage() {
         id,
         data: data as UpdateProductInput,
       });
-      returnToGrid();
+      setToast({ message: 'Changes saved successfully', severity: 'success' });
     } catch (error) {
-      // Error is handled by mutation state
       console.error('Failed to update product:', error);
+      setToast({ message: 'Failed to save changes', severity: 'error' });
     }
   };
 
@@ -545,6 +547,17 @@ export default function ProductEditPage() {
           <Button onClick={() => setCategoryModalOpen(false)}>Cancel</Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={!!toast}
+        autoHideDuration={3000}
+        onClose={() => setToast(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity={toast?.severity} onClose={() => setToast(null)} sx={{ width: '100%' }}>
+          {toast?.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }
