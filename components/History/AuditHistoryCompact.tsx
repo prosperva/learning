@@ -2,8 +2,8 @@
 "use client";
 import { useState, useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { fetchAuditLogs } from "@/lib/api/auditLogs";
+import { useAuditLogs } from "@/hooks/useAuditLogs";
+import { useAuditConfig } from "@/hooks/useAuditConfig";
 import type { AuditLog } from "@/lib/api/auditLogs";
 
 import {
@@ -48,9 +48,6 @@ interface Props {
 
 type SortField = "modifiedDate" | "modifiedBy" | "operation";
 type SortDir = "asc" | "desc";
-
-interface AuditFieldConfig { fieldName: string; displayName: string; isEnabled: boolean; }
-interface AuditTableConfig { tableName: string; fields: AuditFieldConfig[]; }
 
 // ---------- Helpers ----------
 const operationColor = (op: string): "success" | "warning" | "error" | "default" => {
@@ -270,18 +267,12 @@ export default function AuditHistoryCompact({ recordId, entityKey: entityKeyProp
   const [quickFilter, setQuickFilter] = useState("");
   const [operationFilter, setOperationFilter] = useState("all");
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["audit", entityKey, String(recordId)],
-    queryFn: () => fetchAuditLogs({ entityKey, recordId }),
-    enabled: !!entityKey && recordId !== "",
-  });
+  const { data, isLoading, isError } = useAuditLogs(
+    { entityKey, recordId },
+    { enabled: !!entityKey && recordId !== "" }
+  );
 
-  // Audit config — for display name resolution
-  const { data: configData } = useQuery<AuditTableConfig[]>({
-    queryKey: ["audit-config"],
-    queryFn: () => fetch("/api/audit/config").then(r => r.json()),
-    staleTime: 60_000,
-  });
+  const { data: configData } = useAuditConfig();
 
   const displayNameMap = useMemo<Map<string, string>>(() => {
     const table = configData?.find(t => t.tableName.toLowerCase() === entityKey.toLowerCase());
