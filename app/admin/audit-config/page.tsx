@@ -28,45 +28,12 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import SaveIcon from '@mui/icons-material/Save';
 import SearchIcon from '@mui/icons-material/Search';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-interface AuditFieldConfig {
-  fieldName: string;
-  displayName: string;
-  isEnabled: boolean;
-}
-
-interface AuditTableConfig {
-  tableName: string;
-  fields: AuditFieldConfig[];
-}
-
-// ── API helpers ───────────────────────────────────────────────────────────────
-
-async function fetchConfig(): Promise<AuditTableConfig[]> {
-  const res = await fetch('/api/audit/config');
-  if (!res.ok) throw new Error('Failed to load audit config');
-  return res.json();
-}
-
-async function batchUpdateFields(
-  tableName: string,
-  fields: AuditFieldConfig[]
-): Promise<AuditFieldConfig[]> {
-  const res = await fetch(`/api/audit/config/${tableName}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(fields.map(f => ({
-      fieldName: f.fieldName,
-      isEnabled: f.isEnabled,
-      displayName: f.displayName,
-    }))),
-  });
-  if (!res.ok) throw new Error('Failed to update field config');
-  return res.json();
-}
+import {
+  useAuditConfig,
+  useBatchUpdateAuditFields,
+  type AuditFieldConfig,
+  type AuditTableConfig,
+} from '@/hooks/useAuditConfig';
 
 // ── Field row (controlled, no own mutation) ───────────────────────────────────
 
@@ -113,12 +80,12 @@ function TableSection({
   table: AuditTableConfig;
   onSaved: (msg: string) => void;
 }) {
-  const queryClient = useQueryClient();
   const [localFields, setLocalFields] = useState<AuditFieldConfig[]>(table.fields);
-  const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [fieldFilter, setFieldFilter] = useState('');
 
-  // Sync when server data refreshes after a successful save
+  const mutation = useBatchUpdateAuditFields();
+
   useEffect(() => {
     setLocalFields(table.fields);
   }, [table.fields]);
@@ -136,18 +103,12 @@ function TableSection({
     setLocalFields(prev => prev.map(f => f.fieldName === fieldName ? { ...f, displayName } : f));
 
   const handleSave = async () => {
-    setIsSaving(true);
     setSaveError(null);
     try {
-      await batchUpdateFields(table.tableName, changedFields);
-      await queryClient.invalidateQueries({ queryKey: ['audit-config'] });
-      onSaved(
-        `${table.tableName} saved — ${changedFields.length} field${changedFields.length > 1 ? 's' : ''} updated`
-      );
+      await mutation.mutateAsync({ tableName: table.tableName, fields: changedFields });
+      onSaved(`${table.tableName} saved — ${changedFields.length} field${changedFields.length > 1 ? 's' : ''} updated`);
     } catch (e) {
       setSaveError((e as Error).message);
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -157,7 +118,7 @@ function TableSection({
 
   const handleToggleAll = () =>
     setLocalFields(prev => prev.map(f => ({ ...f, isEnabled: !allEnabled })));
-  const [fieldFilter, setFieldFilter] = useState('');
+
   const sortedFields = [...localFields].sort((a, b) => Number(b.isEnabled) - Number(a.isEnabled));
   const visibleFields = fieldFilter.trim()
     ? sortedFields.filter(f =>
@@ -249,18 +210,18 @@ function TableSection({
             <Button
               size="small"
               onClick={() => setLocalFields(table.fields)}
-              disabled={isSaving}
+              disabled={mutation.isPending}
             >
               Discard
             </Button>
             <Button
               variant="contained"
               size="small"
-              startIcon={isSaving ? <CircularProgress size={14} color="inherit" /> : <SaveIcon />}
+              startIcon={mutation.isPending ? <CircularProgress size={14} color="inherit" /> : <SaveIcon />}
               onClick={handleSave}
-              disabled={isSaving}
+              disabled={mutation.isPending}
             >
-              {isSaving ? 'Saving…' : 'Save Changes'}
+              {mutation.isPending ? 'Saving…' : 'Save Changes'}
             </Button>
           </Box>
         )}
@@ -275,10 +236,7 @@ export default function AuditConfigPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [filter, setFilter] = useState('');
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['audit-config'],
-    queryFn: fetchConfig,
-  });
+  const { data, isLoading, isError } = useAuditConfig();
 
   const filtered = filter.trim()
     ? data?.filter(t => t.tableName.toLowerCase().includes(filter.toLowerCase()))
