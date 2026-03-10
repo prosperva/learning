@@ -6,32 +6,13 @@ namespace CommonFields.API.Repositories;
 
 public class SavedSearchRepository(AppDbContext db) : ISavedSearchRepository
 {
-    public async Task<IEnumerable<SavedSearch>> QueryAsync(
-        string? context, string? visibility, string? createdBy,
-        bool includeGlobal, string currentUser)
+    public async Task<IEnumerable<SavedSearch>> QueryAsync(string currentUser, string? context = null)
     {
-        var q = db.SavedSearches.AsQueryable();
+        var q = db.SavedSearches
+            .Where(s => s.CreatedBy == currentUser || s.Visibility == "global");
 
         if (!string.IsNullOrEmpty(context))
             q = q.Where(s => s.Context == context);
-
-        if (!string.IsNullOrEmpty(visibility))
-        {
-            q = q.Where(s => s.Visibility == visibility);
-        }
-        else if (includeGlobal)
-        {
-            // user's own searches + all global searches
-            q = q.Where(s => s.CreatedBy == currentUser || s.Visibility == "global");
-        }
-        else if (!string.IsNullOrEmpty(createdBy))
-        {
-            q = q.Where(s => s.CreatedBy == createdBy);
-        }
-        else
-        {
-            q = q.Where(s => s.CreatedBy == currentUser);
-        }
 
         return await q.OrderByDescending(s => s.CreatedAt).ToListAsync();
     }

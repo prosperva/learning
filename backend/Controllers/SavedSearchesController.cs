@@ -32,11 +32,11 @@ public class SavedSearchesController(ISavedSearchService service) : ControllerBa
         return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
     }
 
-    // PUT /api/savedsearches/{id}
-    [HttpPut("{id:guid}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateSavedSearchRequest request)
+    // PUT /api/savedsearches
+    [HttpPut]
+    public async Task<IActionResult> Update([FromBody] UpdateSavedSearchRequest request)
     {
-        var dto = await service.UpdateAsync(id, request);
+        var dto = await service.UpdateAsync(request);
         return dto is null ? NotFound() : Ok(dto);
     }
 

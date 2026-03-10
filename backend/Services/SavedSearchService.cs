@@ -11,14 +11,7 @@ public class SavedSearchService(
 {
     public async Task<IEnumerable<SavedSearchDto>> QueryAsync(SavedSearchQueryRequest request)
     {
-        var user = currentUser.GetCurrentUser();
-        var results = await repo.QueryAsync(
-            request.Context,
-            request.Visibility,
-            request.CreatedBy,
-            request.IncludeGlobal,
-            user);
-
+        var results = await repo.QueryAsync(currentUser.GetCurrentUser(), request.Context);
         return results.Select(ToDto);
     }
 
@@ -44,15 +37,13 @@ public class SavedSearchService(
         return ToDto(saved);
     }
 
-    public async Task<SavedSearchDto?> UpdateAsync(Guid id, UpdateSavedSearchRequest request)
+    public async Task<SavedSearchDto?> UpdateAsync(UpdateSavedSearchRequest request)
     {
-        var entity = await repo.GetByIdAsync(id);
+        var entity = await repo.GetByIdAsync(request.Id);
         if (entity is null) return null;
 
-        if (request.Name        is not null) entity.Name        = request.Name;
-        if (request.Description is not null) entity.Description = request.Description;
-        if (request.Visibility  is not null) entity.Visibility  = request.Visibility;
-        if (request.Params      is not null) entity.Params      = request.Params.Value.GetRawText();
+        if (request.Name       is not null) entity.Name       = request.Name;
+        if (request.Visibility is not null) entity.Visibility = request.Visibility;
 
         var updated = await repo.UpdateAsync(entity);
         return ToDto(updated);

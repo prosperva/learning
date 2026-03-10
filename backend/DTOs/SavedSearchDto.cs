@@ -26,17 +26,12 @@ public class CreateSavedSearchRequest
 
 public class UpdateSavedSearchRequest
 {
-    public string?                 Name        { get; set; }
-    public string?                 Description { get; set; }
-    public string?                 Visibility  { get; set; }
-    public JsonElement?            Params      { get; set; }
+    public Guid    Id         { get; set; }
+    public string? Name       { get; set; }
+    public string? Visibility { get; set; }
 }
 
 public class SavedSearchQueryRequest
 {
-    public string?  Context       { get; set; }
-    public string?  Visibility    { get; set; }
-    public string?  CreatedBy     { get; set; }
-    public bool     IncludeGlobal { get; set; }
-    public string?  UserId        { get; set; }
+    public string? Context { get; set; }
 }

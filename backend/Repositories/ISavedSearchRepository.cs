@@ -4,7 +4,7 @@ namespace CommonFields.API.Repositories;
 
 public interface ISavedSearchRepository
 {
-    Task<IEnumerable<SavedSearch>> QueryAsync(string? context, string? visibility, string? createdBy, bool includeGlobal, string currentUser);
+    Task<IEnumerable<SavedSearch>> QueryAsync(string currentUser, string? context = null);
     Task<SavedSearch?> GetByIdAsync(Guid id);
     Task<SavedSearch>  AddAsync(SavedSearch entity);
     Task<SavedSearch>  UpdateAsync(SavedSearch entity);
