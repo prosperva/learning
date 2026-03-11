@@ -131,8 +131,7 @@ export const DynamicSearch: React.FC<DynamicSearchProps> = ({
   onSave,
   onLoad,
   onDelete,
-  onRename,
-  onChangeVisibility,
+  onUpdate,
   savedSearches = [],
   enableSaveSearch = true,
   searchButtonText = 'Search',
@@ -515,16 +514,12 @@ export const DynamicSearch: React.FC<DynamicSearchProps> = ({
 
   const handleRenameSearch = () => {
     if (searchToRename && newSearchName.trim()) {
-      // Handle name change
-      if (newSearchName.trim() !== searchToRename.name && onRename) {
-        onRename(searchToRename.id, newSearchName.trim());
+      const updates: { name?: string; visibility?: SearchVisibility } = {};
+      if (newSearchName.trim() !== searchToRename.name) updates.name = newSearchName.trim();
+      if (newSearchVisibility !== searchToRename.visibility) updates.visibility = newSearchVisibility;
+      if (Object.keys(updates).length > 0 && onUpdate) {
+        onUpdate(searchToRename.id, updates);
       }
-
-      // Handle visibility change
-      if (newSearchVisibility !== searchToRename.visibility && onChangeVisibility) {
-        onChangeVisibility(searchToRename.id, newSearchVisibility);
-      }
-
       setRenameDialogOpen(false);
       setSearchToRename(null);
       setNewSearchName('');
@@ -533,9 +528,8 @@ export const DynamicSearch: React.FC<DynamicSearchProps> = ({
   };
 
   const handleToggleVisibility = (searchId: string, currentVisibility: SearchVisibility) => {
-    if (onChangeVisibility) {
-      const newVisibility: SearchVisibility = currentVisibility === 'user' ? 'global' : 'user';
-      onChangeVisibility(searchId, newVisibility);
+    if (onUpdate) {
+      onUpdate(searchId, { visibility: currentVisibility === 'user' ? 'global' : 'user' });
     }
   };
 
@@ -999,17 +993,17 @@ export const DynamicSearch: React.FC<DynamicSearchProps> = ({
                     label={searchToPreview.visibility === 'global' ? 'Global' : 'User'}
                     color={searchToPreview.visibility === 'global' ? 'primary' : 'default'}
                     onClick={
-                      canDeleteSearch(searchToPreview) && onChangeVisibility
+                      canDeleteSearch(searchToPreview) && onUpdate
                         ? () => handleToggleVisibility(searchToPreview.id, searchToPreview.visibility)
                         : undefined
                     }
                     sx={
-                      canDeleteSearch(searchToPreview) && onChangeVisibility
+                      canDeleteSearch(searchToPreview) && onUpdate
                         ? { cursor: 'pointer' }
                         : undefined
                     }
                   />
-                  {canDeleteSearch(searchToPreview) && onChangeVisibility && (
+                  {canDeleteSearch(searchToPreview) && onUpdate && (
                     <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                       Click to toggle visibility
                     </Typography>

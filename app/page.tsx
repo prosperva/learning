@@ -397,18 +397,10 @@ export default function Home() {
     console.log('Deleted Search ID:', searchId);
   };
 
-  const handleRenameSearch = (searchId: string, newName: string) => {
+  const handleUpdateSearch = (searchId: string, updates: { name?: string; visibility?: 'user' | 'global' }) => {
     setSavedSearches((prev) =>
-      prev.map((s) => (s.id === searchId ? { ...s, name: newName } : s))
+      prev.map((s) => (s.id === searchId ? { ...s, ...updates } : s))
     );
-    console.log('Renamed Search ID:', searchId, 'to:', newName);
-  };
-
-  const handleChangeVisibility = (searchId: string, visibility: 'user' | 'global') => {
-    setSavedSearches((prev) =>
-      prev.map((s) => (s.id === searchId ? { ...s, visibility } : s))
-    );
-    console.log('Changed Search ID:', searchId, 'visibility to:', visibility);
   };
 
   // Render functions for different view modes
@@ -764,8 +756,7 @@ export default function Home() {
         onSave={handleSaveSearch}
         onLoad={handleLoadSearch}
         onDelete={handleDeleteSearch}
-        onRename={handleRenameSearch}
-        onChangeVisibility={handleChangeVisibility}
+        onUpdate={handleUpdateSearch}
         savedSearches={savedSearches}
         enableSaveSearch={true}
         currentUser="demo_user"

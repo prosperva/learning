@@ -52,8 +52,7 @@ import { useProducts, useAllProducts, usePrefetchProduct, type ProductsQueryPara
 import {
   useSavedSearches,
   useCreateSavedSearch,
-  // useRenameSavedSearch,
-  // useChangeSearchVisibility,
+  useUpdateSavedSearch,
   useDeleteSavedSearch,
 } from '@/hooks/useSavedSearches';
 import {
@@ -146,7 +145,7 @@ export default function ProductsPage() {
     // includeGlobal: true,
   });
   const createSavedSearchMutation = useCreateSavedSearch();
-  // const renameSavedSearchMutation = useRenameSavedSearch();
+  const updateSavedSearchMutation = useUpdateSavedSearch();
   // const changeVisibilityMutation = useChangeSearchVisibility();
   const deleteSavedSearchMutation = useDeleteSavedSearch();
 
@@ -429,28 +428,8 @@ export default function ProductsPage() {
     });
   };
 
-  const handleRenameSearch = (searchId: string, newName: string) => {
-    // renameSavedSearchMutation.mutate({ id: searchId, name: newName }, {
-    //   onSuccess: () => {
-    //     console.log('Renamed Search ID:', searchId, 'to:', newName);
-    //   },
-    //   onError: (error) => {
-    //     console.error('Failed to rename search:', error);
-    //     alert('Failed to rename search. Please try again.');
-    //   },
-    // });
-  };
-
-  const handleChangeVisibility = (searchId: string, visibility: 'user' | 'global') => {
-    // changeVisibilityMutation.mutate({ id: searchId, visibility }, {
-    //   onSuccess: () => {
-    //     console.log('Changed Search ID:', searchId, 'visibility to:', visibility);
-    //   },
-    //   onError: (error) => {
-    //     console.error('Failed to change visibility:', error);
-    //     alert('Failed to change visibility. Please try again.');
-    //   },
-    // });
+  const handleUpdateSearch = (searchId: string, updates: { name?: string; visibility?: 'user' | 'global' }) => {
+    updateSavedSearchMutation.mutate({ id: searchId, ...updates });
   };
 
   // Handle export/download for the current report type
@@ -1091,8 +1070,7 @@ export default function ProductsPage() {
         onSave={handleSaveSearch}
         onLoad={handleLoadSearch}
         onDelete={handleDeleteSearch}
-        onRename={handleRenameSearch}
-        onChangeVisibility={handleChangeVisibility}
+        onUpdate={handleUpdateSearch}
         savedSearches={savedSearches}
         enableSaveSearch={true}
         currentUser="demo_user"

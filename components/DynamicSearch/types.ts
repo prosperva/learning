@@ -92,8 +92,7 @@ export interface DynamicSearchProps {
   onSave?: (search: SavedSearch) => void;
   onLoad?: (searchId: string) => void;
   onDelete?: (searchId: string) => void;
-  onRename?: (searchId: string, newName: string) => void;
-  onChangeVisibility?: (searchId: string, visibility: SearchVisibility) => void;
+  onUpdate?: (searchId: string, updates: { name?: string; visibility?: SearchVisibility }) => void;
   savedSearches?: SavedSearch[];
   enableSaveSearch?: boolean;
   searchButtonText?: string;
