@@ -88,7 +88,7 @@ export async function updateSavedSearch(input: UpdateSavedSearchRequest): Promis
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify(input),
+    body: JSON.stringify(Object.fromEntries(Object.entries(input).filter(([, v]) => v != null))),
   });
 
   if (!response.ok) {

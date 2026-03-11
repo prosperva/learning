@@ -41,8 +41,8 @@ public class SavedSearchService(ISavedSearchRepository repo) : ISavedSearchServi
         var entity = await repo.GetByIdAsync(request.Id);
         if (entity is null) return null;
 
-        if (request.Name       is not null) entity.Name       = request.Name;
-        if (request.Visibility is not null) entity.Visibility = request.Visibility;
+        if (!string.IsNullOrWhiteSpace(request.Name))       entity.Name       = request.Name;
+        if (!string.IsNullOrWhiteSpace(request.Visibility)) entity.Visibility = request.Visibility;
 
         var updated = await repo.UpdateAsync(entity);
         return ToDto(updated);

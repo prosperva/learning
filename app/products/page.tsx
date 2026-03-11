@@ -429,7 +429,14 @@ export default function ProductsPage() {
   };
 
   const handleUpdateSearch = (searchId: string, updates: { name?: string; visibility?: 'user' | 'global' }) => {
-    updateSavedSearchMutation.mutate({ id: searchId, ...updates });
+    updateSavedSearchMutation.mutate({ id: searchId, ...updates }, {
+      onSuccess: () => {
+        setToast({ message: 'Search updated successfully', severity: 'success' });
+      },
+      onError: () => {
+        setToast({ message: 'Failed to update search. Please try again.', severity: 'error' });
+      },
+    });
   };
 
   // Handle export/download for the current report type
