@@ -51,8 +51,8 @@ import { useProducts, useAllProducts, usePrefetchProduct, type ProductsQueryPara
 import {
   useSavedSearches,
   useCreateSavedSearch,
-  useRenameSavedSearch,
-  useChangeSearchVisibility,
+  // useRenameSavedSearch,
+  // useChangeSearchVisibility,
   useDeleteSavedSearch,
 } from '@/hooks/useSavedSearches';
 import {
@@ -142,11 +142,11 @@ export default function ProductsPage() {
   // Saved searches from .NET API
   const { data: savedSearches = [], isLoading: isSavedSearchesLoading } = useSavedSearches({
     context: 'products',
-    includeGlobal: true,
+    // includeGlobal: true,
   });
   const createSavedSearchMutation = useCreateSavedSearch();
-  const renameSavedSearchMutation = useRenameSavedSearch();
-  const changeVisibilityMutation = useChangeSearchVisibility();
+  // const renameSavedSearchMutation = useRenameSavedSearch();
+  // const changeVisibilityMutation = useChangeSearchVisibility();
   const deleteSavedSearchMutation = useDeleteSavedSearch();
 
   // Use hasSearched from persisted grid state
@@ -396,7 +396,7 @@ export default function ProductsPage() {
   const handleSaveSearch = (search: SavedSearch) => {
     createSavedSearchMutation.mutate({
       name: search.name,
-      description: search.description,
+      // description: search.description,
       context: 'products',
       visibility: search.visibility,
       params: search.params,
@@ -429,27 +429,27 @@ export default function ProductsPage() {
   };
 
   const handleRenameSearch = (searchId: string, newName: string) => {
-    renameSavedSearchMutation.mutate({ id: searchId, name: newName }, {
-      onSuccess: () => {
-        console.log('Renamed Search ID:', searchId, 'to:', newName);
-      },
-      onError: (error) => {
-        console.error('Failed to rename search:', error);
-        alert('Failed to rename search. Please try again.');
-      },
-    });
+    // renameSavedSearchMutation.mutate({ id: searchId, name: newName }, {
+    //   onSuccess: () => {
+    //     console.log('Renamed Search ID:', searchId, 'to:', newName);
+    //   },
+    //   onError: (error) => {
+    //     console.error('Failed to rename search:', error);
+    //     alert('Failed to rename search. Please try again.');
+    //   },
+    // });
   };
 
   const handleChangeVisibility = (searchId: string, visibility: 'user' | 'global') => {
-    changeVisibilityMutation.mutate({ id: searchId, visibility }, {
-      onSuccess: () => {
-        console.log('Changed Search ID:', searchId, 'visibility to:', visibility);
-      },
-      onError: (error) => {
-        console.error('Failed to change visibility:', error);
-        alert('Failed to change visibility. Please try again.');
-      },
-    });
+    // changeVisibilityMutation.mutate({ id: searchId, visibility }, {
+    //   onSuccess: () => {
+    //     console.log('Changed Search ID:', searchId, 'visibility to:', visibility);
+    //   },
+    //   onError: (error) => {
+    //     console.error('Failed to change visibility:', error);
+    //     alert('Failed to change visibility. Please try again.');
+    //   },
+    // });
   };
 
   // Handle export/download for the current report type

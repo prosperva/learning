@@ -22,7 +22,10 @@ export const savedSearchKeys = {
   detail: (id: string) => [...savedSearchKeys.details(), id] as const,
 };
 
+const CURRENT_USER = 'demo@app.com';
+
 export function useSavedSearches(params: SavedSearchQueryParams = {}, options?: { enabled?: boolean }) {
+  params.user = CURRENT_USER;
   return useQuery<SavedSearch[], Error>({
     queryKey: savedSearchKeys.list(params),
     queryFn: () => fetchSavedSearches(params),

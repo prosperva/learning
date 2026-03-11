@@ -5,13 +5,11 @@ using CommonFields.API.Repositories;
 
 namespace CommonFields.API.Services;
 
-public class SavedSearchService(
-    ISavedSearchRepository repo,
-    ICurrentUserService currentUser) : ISavedSearchService
+public class SavedSearchService(ISavedSearchRepository repo) : ISavedSearchService
 {
     public async Task<IEnumerable<SavedSearchDto>> QueryAsync(SavedSearchQueryRequest request)
     {
-        var results = await repo.QueryAsync(currentUser.GetCurrentUser(), request.Context);
+        var results = await repo.QueryAsync(request.CurrentUser, request.Context);
         return results.Select(ToDto);
     }
 

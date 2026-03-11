@@ -33,5 +33,6 @@ public class UpdateSavedSearchRequest
 
 public class SavedSearchQueryRequest
 {
-    public string? Context { get; set; }
+    public string? Context     { get; set; }
+    public string  CurrentUser { get; set; } = string.Empty;
 }

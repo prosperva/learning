@@ -8,11 +8,11 @@ namespace CommonFields.API.Controllers;
 [Route("api/savedsearches")]
 public class SavedSearchesController(ISavedSearchService service) : ControllerBase
 {
-    // POST /api/savedsearches/search
-    [HttpPost("search")]
-    public async Task<IActionResult> Search([FromBody] SavedSearchQueryRequest request)
+    // GET /api/savedsearches?context=products&user=prosper@app.com
+    [HttpGet]
+    public async Task<IActionResult> GetAll([FromQuery] string? context, [FromQuery] string? user)
     {
-        var results = await service.QueryAsync(request);
+        var results = await service.QueryAsync(new SavedSearchQueryRequest { Context = context, CurrentUser = user ?? string.Empty });
         return Ok(results);
     }
 

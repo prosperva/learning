@@ -19,6 +19,7 @@ export interface UpdateSavedSearchRequest {
 
 export interface SavedSearchQueryParams {
   context?: string;
+  user?: string;
 }
 
 // ── Response type ─────────────────────────────────────────────────────────────
@@ -36,11 +37,11 @@ interface SavedSearchResponse {
 // ── API functions ─────────────────────────────────────────────────────────────
 
 export async function fetchSavedSearches(params: SavedSearchQueryParams = {}): Promise<SavedSearch[]> {
-  const response = await fetch(`${SAVED_SEARCHES_ENDPOINT}/search`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const query = new URLSearchParams();
+  if (params.context) query.set('context', params.context);
+  if (params.user) query.set('user', params.user);
+  const response = await fetch(`${SAVED_SEARCHES_ENDPOINT}?${query}`, {
     credentials: 'include',
-    body: JSON.stringify(params),
   });
 
   if (!response.ok) {
