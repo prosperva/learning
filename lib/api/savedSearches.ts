@@ -120,7 +120,7 @@ function mapResponseToSavedSearch(response: SavedSearchResponse): SavedSearch {
     name: response.name,
     context: response.context,
     visibility: response.visibility,
-    params: response.params,
+    params: typeof response.params === 'string' ? JSON.parse(response.params) : response.params,
     createdAt: response.createdAt,
     createdBy: response.createdBy,
   };
