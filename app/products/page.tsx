@@ -29,6 +29,7 @@ import {
   IconButton,
   Tooltip,
   CircularProgress,
+  Snackbar,
 } from '@mui/material';
 import {
   Download as DownloadIcon,
@@ -151,6 +152,7 @@ export default function ProductsPage() {
 
   // Use hasSearched from persisted grid state
   const hasSearched = state.hasSearched;
+  const [toast, setToast] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [downloadMenuAnchor, setDownloadMenuAnchor] = useState<null | HTMLElement>(null);
   const [columnSelectorOpen, setColumnSelectorOpen] = useState(false);
@@ -402,11 +404,10 @@ export default function ProductsPage() {
       createdBy: 'demo@app.com',
     }, {
       onSuccess: () => {
-        console.log('Saved Search:', search.name);
+        setToast({ message: `"${search.name}" saved successfully`, severity: 'success' });
       },
-      onError: (error) => {
-        console.error('Failed to save search:', error);
-        alert('Failed to save search. Please try again.');
+      onError: () => {
+        setToast({ message: 'Failed to save search. Please try again.', severity: 'error' });
       },
     });
   };
@@ -1194,6 +1195,16 @@ export default function ProductsPage() {
           <Button onClick={() => setColumnSelectorOpen(false)} variant="contained">Done</Button>
         </DialogActions>
       </Dialog>
+      <Snackbar
+        open={!!toast}
+        autoHideDuration={4000}
+        onClose={() => setToast(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity={toast?.severity} onClose={() => setToast(null)} sx={{ width: '100%' }}>
+          {toast?.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }
