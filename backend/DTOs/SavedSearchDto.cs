@@ -21,7 +21,8 @@ public class CreateSavedSearchRequest
     public string?                 Description { get; set; }
     public string                  Context     { get; set; } = string.Empty;
     public string                  Visibility  { get; set; } = "user";
-    public JsonElement             Params      { get; set; }
+    public string                  Params      { get; set; } = "{}";
+    public string                  CreatedBy   { get; set; } = string.Empty;
 }
 
 public class UpdateSavedSearchRequest

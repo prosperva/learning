@@ -396,10 +396,10 @@ export default function ProductsPage() {
   const handleSaveSearch = (search: SavedSearch) => {
     createSavedSearchMutation.mutate({
       name: search.name,
-      // description: search.description,
       context: 'products',
       visibility: search.visibility,
       params: search.params,
+      createdBy: 'demo@app.com',
     }, {
       onSuccess: () => {
         console.log('Saved Search:', search.name);

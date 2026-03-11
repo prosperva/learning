@@ -28,7 +28,8 @@ public class SavedSearchService(ISavedSearchRepository repo) : ISavedSearchServi
             Description = request.Description,
             Context     = request.Context,
             Visibility  = request.Visibility,
-            Params      = request.Params.GetRawText(),
+            Params      = request.Params,
+            CreatedBy   = request.CreatedBy,
         };
 
         var saved = await repo.AddAsync(entity);

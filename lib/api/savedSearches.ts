@@ -9,6 +9,7 @@ export interface CreateSavedSearchRequest {
   context: string;
   visibility: SearchVisibility;
   params: Record<string, any>;
+  createdBy: string;
 }
 
 export interface UpdateSavedSearchRequest {
@@ -70,7 +71,7 @@ export async function createSavedSearch(input: CreateSavedSearchRequest): Promis
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify(input),
+    body: JSON.stringify({ ...input, params: JSON.stringify(input.params) }),
   });
 
   if (!response.ok) {
