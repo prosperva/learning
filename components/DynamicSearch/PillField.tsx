@@ -110,7 +110,10 @@ export const PillField: React.FC<PillFieldProps> = ({
   };
 
   const handleTextChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newInputText = event.target.value;
+    let newInputText = event.target.value;
+    if (pillType === 'number') {
+      newInputText = newInputText.replace(allowRanges ? /[^\d,\s\-]/g : /[^\d,\s]/g, '');
+    }
     setInputText(newInputText);
     setInternalError('');
 
