@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState, useEffect, type ReactNode } from 'react';
+import { SessionProvider } from 'next-auth/react';
 import { useGridNavigationStore } from '@/stores/gridNavigationStore';
 
 interface ProvidersProps {
@@ -52,9 +53,11 @@ export function Providers({ children }: ProvidersProps) {
   }, [clearNavigationStack]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-      {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
-    </QueryClientProvider>
+    <SessionProvider>
+      <QueryClientProvider client={queryClient}>
+        {children}
+        {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
+      </QueryClientProvider>
+    </SessionProvider>
   );
 }

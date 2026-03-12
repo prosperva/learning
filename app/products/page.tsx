@@ -55,6 +55,7 @@ import {
   useUpdateSavedSearch,
   useDeleteSavedSearch,
 } from '@/hooks/useSavedSearches';
+import { useSession } from 'next-auth/react';
 import {
   useResponsiveColumnVisibility,
   type ResponsiveColumnConfig,
@@ -71,6 +72,8 @@ export default function ProductsPage() {
   // ========================================
   // CONFIGURATION OPTIONS
   // ========================================
+  const { data: session } = useSession();
+  const currentUser = session?.user?.email ?? 'demo@app.com';
   const { searchFields } = useProductsSearchFields();
   const enableExport = true;
   const enableEditView = true;
@@ -142,6 +145,7 @@ export default function ProductsPage() {
   // Saved searches from .NET API
   const { data: savedSearches = [], isLoading: isSavedSearchesLoading } = useSavedSearches({
     context: 'products',
+    user: currentUser,
     // includeGlobal: true,
   });
   const createSavedSearchMutation = useCreateSavedSearch();
@@ -400,7 +404,7 @@ export default function ProductsPage() {
       context: 'products',
       visibility: search.visibility,
       params: search.params,
-      createdBy: 'demo@app.com',
+      createdBy: currentUser,
     }, {
       onSuccess: () => {
         setToast({ message: `"${search.name}" saved successfully`, severity: 'success' });
@@ -1080,7 +1084,7 @@ export default function ProductsPage() {
         onUpdate={handleUpdateSearch}
         savedSearches={savedSearches}
         enableSaveSearch={true}
-        currentUser="demo_user"
+        currentUser={currentUser}
         searchContext="products"
         allowCrossContext={false}
         isAdmin={false}
