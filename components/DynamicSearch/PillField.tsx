@@ -59,12 +59,10 @@ export const PillField: React.FC<PillFieldProps> = ({
       throw new Error('Invalid range format');
     }
 
-    if (start > end) {
-      throw new Error('Start must be less than or equal to end');
-    }
+    const [low, high] = start > end ? [end, start] : [start, end];
 
     const result: number[] = [];
-    for (let i = start; i <= end; i++) {
+    for (let i = low; i <= high; i++) {
       result.push(i);
     }
     return result;
