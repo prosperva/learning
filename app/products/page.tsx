@@ -36,16 +36,15 @@ import {
   PictureAsPdf as PdfIcon,
   TableChart as ExcelIcon,
   Description as CsvIcon,
-  Edit as EditIcon,
-  Visibility as ViewIcon,
   Add as AddIcon,
+  LibraryBooks as LibraryBooksIcon,
   Refresh as RefreshIcon,
   // Lock as LockIcon,
 } from '@mui/icons-material';
 // import { LockService } from '@/lib/lockService';
 import { DataGrid, GridColDef, GridPaginationModel, GridSortModel, GridRowSelectionModel } from '@mui/x-data-grid';
 import dayjs from 'dayjs';
-import { DynamicSearch, SavedSearch, ViewMode, ReportFormat, ReportOption, FieldConfig } from '@/components/DynamicSearch';
+import { DynamicSearch, SavedSearch, ViewMode, ReportFormat, ReportOption } from '@/components/DynamicSearch';
 import { useProductsSearchFields } from '../fieldConfigs/productsSearchFields';
 import { useGridManagement } from '@/hooks/useGridManagement';
 import { useProducts, useAllProducts, usePrefetchProduct, type ProductsQueryParams } from '@/hooks/useProducts';
@@ -159,8 +158,6 @@ export default function ProductsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [downloadMenuAnchor, setDownloadMenuAnchor] = useState<null | HTMLElement>(null);
   const [columnSelectorOpen, setColumnSelectorOpen] = useState(false);
-  const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
   // Track locked rows: { rowId: { lockedBy: string, lockedAt: Date } }
   // const [lockedRows, setLockedRows] = useState<Record<number, { lockedBy: string; lockedAt: Date }>>({});
@@ -298,41 +295,26 @@ export default function ProductsPage() {
         {
           field: 'actions',
           headerName: 'Actions',
-          width: 250,
+          width: 70,
           sortable: false,
           filterable: false,
           renderCell: (params) => {
             return (
-              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', height: '100%' }}>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  startIcon={<ViewIcon />}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleViewProduct(params.row);
-                  }}
-                >
-                  View
-                </Button>
-                <Tooltip title="Edit product">
-                  <span>
-                    <Button
-                      size="small"
-                      variant="contained"
-                      startIcon={<EditIcon />}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditClick(params.row);
-                      }}
-                      onMouseEnter={() => {
-                        prefetchProduct(params.row.id);
-                        prefetchRoute(`/products/edit/${params.row.id}`);
-                      }}
-                    >
-                      Edit
-                    </Button>
-                  </span>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%' }}>
+                <Tooltip title="Open product">
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditClick(params.row);
+                    }}
+                    onMouseEnter={() => {
+                      prefetchProduct(params.row.id);
+                      prefetchRoute(`/products/edit/${params.row.id}`);
+                    }}
+                  >
+                    <LibraryBooksIcon fontSize="small" />
+                  </IconButton>
                 </Tooltip>
               </Box>
             );
@@ -392,10 +374,6 @@ export default function ProductsPage() {
     });
   };
 
-  const handleViewProduct = (product: any) => {
-    setSelectedProduct(product);
-    setViewDialogOpen(true);
-  };
 
   // Saved search handlers - using .NET API via React Query mutations
   const handleSaveSearch = (search: SavedSearch) => {
@@ -846,7 +824,6 @@ export default function ProductsPage() {
         sortModel={state.sortModel}
         onSortModelChange={handleSortChange}
         sortingMode="server"
-        checkboxSelection
         onRowSelectionModelChange={handleRowSelectionChange}
         columnVisibilityModel={columnVisibilityModel}
         onColumnVisibilityModelChange={(model) => setColumnsVisible(model)}
@@ -1072,34 +1049,34 @@ export default function ProductsPage() {
         <strong>Features:</strong> Grid or Report view, export to PDF/Excel/CSV, saved searches, and filter persistence when editing.
       </Alert>
 
-      {/* DynamicSearch Component */}
-      <DynamicSearch
-        key={JSON.stringify(state.filters)}
-        fields={searchFields}
-        onSearch={handleSearch}
-        onReset={handleReset}
-        onSave={handleSaveSearch}
-        onLoad={handleLoadSearch}
-        onDelete={handleDeleteSearch}
-        onUpdate={handleUpdateSearch}
-        savedSearches={savedSearches}
-        enableSaveSearch={true}
-        currentUser={currentUser}
-        searchContext="products"
-        allowCrossContext={false}
-        isAdmin={false}
-        columnLayout={3}
-        enableViewMode={true}
-        defaultViewMode={viewMode}
-        onViewModeChange={setViewMode}
-        reportOptions={reportOptions}
-        initialValues={state.filters}
-        defaultExpanded={!hasSearched}
-      />
+      {/* Search + Results unified */}
+      <Paper elevation={2} sx={{ p: 3 }}>
+        <DynamicSearch
+          key={JSON.stringify(state.filters)}
+          fields={searchFields}
+          onSearch={handleSearch}
+          onReset={handleReset}
+          onSave={handleSaveSearch}
+          onLoad={handleLoadSearch}
+          onDelete={handleDeleteSearch}
+          onUpdate={handleUpdateSearch}
+          savedSearches={savedSearches}
+          enableSaveSearch={true}
+          currentUser={currentUser}
+          searchContext="products"
+          allowCrossContext={false}
+          isAdmin={false}
+          columnLayout={3}
+          enableViewMode={true}
+          defaultViewMode={viewMode}
+          onViewModeChange={setViewMode}
+          reportOptions={reportOptions}
+          initialValues={state.filters}
+          defaultExpanded={!hasSearched}
+        />
 
-      {/* Search Results */}
-      <Box mt={4}>
-        <Paper elevation={2} sx={{ p: 3 }}>
+        {/* Search Results */}
+        <Box mt={4}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h5">
               Search Results
@@ -1138,29 +1115,9 @@ export default function ProductsPage() {
               </Typography>
             </Box>
           )}
-        </Paper>
-      </Box>
+        </Box>
+      </Paper>
 
-      {/* View Product Dialog */}
-      <Dialog open={viewDialogOpen} onClose={() => setViewDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>View Product - {selectedProduct?.name}</DialogTitle>
-        <DialogContent>
-          {selectedProduct && (
-            <Box sx={{ pt: 2 }}>
-              <DynamicSearch
-                fields={searchFields.map((f: FieldConfig) => ({ ...f, disabled: true }))}
-                onSearch={() => {}}
-                initialValues={selectedProduct}
-                searchButtonText="Edit"
-                resetButtonText="Close"
-                enableSaveSearch={false}
-                columnLayout={2}
-                onReset={() => setViewDialogOpen(false)}
-              />
-            </Box>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Column Selector Dialog */}
       <Dialog open={columnSelectorOpen} onClose={() => setColumnSelectorOpen(false)} maxWidth="sm" fullWidth>
