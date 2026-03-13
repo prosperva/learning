@@ -25,6 +25,7 @@ import {
   Clear as ClearIcon,
   HelpOutline as HelpIcon,
 } from '@mui/icons-material';
+import { DataGrid, GridColDef, GridRowSelectionModel, GridPagination } from '@mui/x-data-grid';
 import { DropdownOption } from './types';
 
 interface ModalSelectFieldProps {
@@ -43,6 +44,8 @@ interface ModalSelectFieldProps {
   tooltip?: string;
   allowMultiple?: boolean;
   error?: string;
+  // Grid mode: when provided, shows a DataGrid with full row details instead of a simple list
+  columns?: GridColDef[];
 }
 
 export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
@@ -61,6 +64,7 @@ export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
   tooltip,
   allowMultiple = false,
   error,
+  columns,
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [filterText, setFilterText] = useState('');
@@ -68,6 +72,8 @@ export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
     allowMultiple ? (Array.isArray(value) ? value : []) : (value || '')
   );
   const [apiOptions, setApiOptions] = useState<DropdownOption[]>([]);
+  const [rawRows, setRawRows] = useState<any[]>([]);
+  const [gridSelection, setGridSelection] = useState<GridRowSelectionModel>({ type: 'include', ids: new Set() });
   const [loading, setLoading] = useState(false);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
@@ -117,6 +123,7 @@ export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
       }));
 
       setApiOptions(mappedOptions);
+      setRawRows(data);
       setHasLoadedOnce(true);
     } catch (error) {
       console.error(`Error fetching options for ${name}:`, error);
@@ -265,16 +272,16 @@ export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
       <Dialog
         open={modalOpen}
         onClose={handleCloseModal}
-        maxWidth="sm"
+        maxWidth={columns ? 'lg' : 'sm'}
         fullWidth
         slotProps={{
           paper: {
-            sx: { height: '70vh', maxHeight: '600px' },
+            sx: { height: '80vh' },
           },
         }}
       >
         <DialogTitle>{label}</DialogTitle>
-        <DialogContent sx={{ p: 0 }}>
+        <DialogContent sx={{ p: 0, display: 'flex', flexDirection: 'column' }}>
           {/* Filter Input */}
           <Box sx={{ p: 1.5, pb: 1, position: 'sticky', top: 0, bgcolor: 'background.paper', zIndex: 1 }}>
             <TextField
@@ -304,61 +311,117 @@ export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
             />
           </Box>
 
-          {/* Options List */}
-          <List sx={{ pt: 0 }}>
-            {loading ? (
-              <ListItem>
-                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', py: 4 }}>
+          {columns ? (
+            /* Grid Mode */
+            <Box sx={{ flex: 1, px: 1.5, pb: 1, minHeight: 0 }}>
+              {loading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
                   <CircularProgress size={40} />
                 </Box>
-              </ListItem>
-            ) : filteredOptions.length > 0 ? (
-              filteredOptions.map((option) => (
-                <ListItem key={option.value} disablePadding>
-                  <ListItemButton
-                    selected={isSelected(option.value!)}
-                    onClick={() => handleSelectOption(option.value!)}
-                  >
-                    {allowMultiple && (
-                      <Checkbox
-                        edge="start"
-                        checked={isSelected(option.value!)}
-                        tabIndex={-1}
-                        disableRipple
-                        sx={{ mr: 1 }}
-                      />
-                    )}
-                    <ListItemText primary={option.label} />
-                  </ListItemButton>
-                </ListItem>
-              ))
-            ) : (
-              <ListItem>
-                <ListItemText
-                  primary="No options found"
-                  secondary="Try adjusting your filter"
-                  sx={{ textAlign: 'center', color: 'text.secondary' }}
+              ) : (
+                <DataGrid
+                  rows={rawRows.filter(row => {
+                    if (!filterText.trim()) return true;
+                    const search = filterText.toLowerCase();
+                    return Object.values(row).some(v =>
+                      String(v ?? '').toLowerCase().includes(search)
+                    );
+                  })}
+                  columns={columns}
+                  getRowId={(row) => row[apiValueField || 'id']}
+                  rowSelectionModel={gridSelection}
+                  onRowSelectionModelChange={setGridSelection}
+                  pageSizeOptions={[25, 50, 100]}
+                  initialState={{ pagination: { paginationModel: { pageSize: 25 } } }}
+                  density="compact"
+                  disableMultipleRowSelection={!allowMultiple}
+                  sx={{ border: 'none' }}
+                  slots={{
+                    footer: () => (
+                      <Box>
+                        <Box sx={{ px: 1.5, pt: 1, display: 'flex', gap: 1 }}>
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            fullWidth
+                            disabled={gridSelection.ids.size === 0}
+                            onClick={() => {
+                              const ids = Array.from(gridSelection.ids);
+                              onChange(name, allowMultiple ? ids as (string | number)[] : ids[0] as string | number);
+                              handleCloseModal();
+                            }}
+                          >
+                            Select
+                          </Button>
+                          <Button fullWidth onClick={handleCloseModal}>Cancel</Button>
+                        </Box>
+                        <GridPagination />
+                      </Box>
+                    ),
+                  }}
                 />
-              </ListItem>
-            )}
-          </List>
+              )}
+            </Box>
+          ) : (
+            /* List Mode */
+            <List sx={{ pt: 0 }}>
+              {loading ? (
+                <ListItem>
+                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', py: 4 }}>
+                    <CircularProgress size={40} />
+                  </Box>
+                </ListItem>
+              ) : filteredOptions.length > 0 ? (
+                filteredOptions.map((option) => (
+                  <ListItem key={option.value} disablePadding>
+                    <ListItemButton
+                      selected={isSelected(option.value!)}
+                      onClick={() => handleSelectOption(option.value!)}
+                    >
+                      {allowMultiple && (
+                        <Checkbox
+                          edge="start"
+                          checked={isSelected(option.value!)}
+                          tabIndex={-1}
+                          disableRipple
+                          sx={{ mr: 1 }}
+                        />
+                      )}
+                      <ListItemText primary={option.label} />
+                    </ListItemButton>
+                  </ListItem>
+                ))
+              ) : (
+                <ListItem>
+                  <ListItemText
+                    primary="No options found"
+                    secondary="Try adjusting your filter"
+                    sx={{ textAlign: 'center', color: 'text.secondary' }}
+                  />
+                </ListItem>
+              )}
+            </List>
+          )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseModal}>Cancel</Button>
-          <Button
-            onClick={handleDone}
-            variant="contained"
-            disabled={
-              loading ||
-              (allowMultiple
-                ? Array.isArray(selectedValue) && selectedValue.length === 0
-                : !selectedValue
-              )
-            }
-          >
-            Done
-          </Button>
-        </DialogActions>
+        {!columns && (
+          <DialogActions sx={{ flexDirection: 'column', gap: 1, p: 2 }}>
+            <Button
+              onClick={handleDone}
+              variant="contained"
+              fullWidth
+              disabled={
+                loading ||
+                (allowMultiple
+                  ? Array.isArray(selectedValue) && selectedValue.length === 0
+                  : !selectedValue
+                )
+              }
+            >
+              Done
+            </Button>
+            <Button onClick={handleCloseModal} fullWidth>Cancel</Button>
+          </DialogActions>
+        )}
       </Dialog>
     </Box>
   );

@@ -61,9 +61,16 @@ export function useProductsSearchFields() {
         name: 'city',
         label: 'City',
         type: 'modal-select' as const,
-        options: [{ label: '-- Any --' }, ...cities],
+        apiUrl: '/api/cities',
+        apiLabelField: 'name',
+        apiValueField: 'id',
         helperText: 'Select a city (loaded from API)',
         tooltip: 'City options are loaded from the API',
+        columns: [
+          { field: 'id', headerName: 'Code', width: 80 },
+          { field: 'name', headerName: 'City', flex: 1 },
+          { field: 'country', headerName: 'Country', width: 120 },
+        ],
       },
       {
         name: 'dateFrom',

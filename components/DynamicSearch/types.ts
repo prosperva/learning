@@ -30,6 +30,7 @@ export interface FieldConfig {
   tooltip?: string;
   fields?: FieldConfig[]; // For grouped fields (only when type='group' or 'accordion')
   allowMultiple?: boolean; // For modal-select: allow selecting multiple values (default: false)
+  columns?: import('@mui/x-data-grid').GridColDef[]; // For modal-select: enables grid mode with full row details
   defaultExpanded?: boolean; // For accordion: whether section starts expanded (default: false)
   copyFromField?: string; // Field name to copy value from (creates a "Copy from X" button)
   copyButtonText?: string; // Custom text for copy button (default: "Copy from {fieldLabel}")

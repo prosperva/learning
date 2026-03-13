@@ -619,6 +619,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
             disabled={isDisabled}
             tooltip={field.tooltip}
             allowMultiple={field.allowMultiple}
+            columns={field.columns}
             error={error}
           />
         </FieldWrapper>
