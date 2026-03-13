@@ -272,11 +272,11 @@ export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
       <Dialog
         open={modalOpen}
         onClose={handleCloseModal}
-        maxWidth={columns ? 'lg' : 'sm'}
+        maxWidth={columns ? 'md' : 'sm'}
         fullWidth
         slotProps={{
           paper: {
-            sx: { height: '80vh' },
+            sx: { height: '65vh' },
           },
         }}
       >
