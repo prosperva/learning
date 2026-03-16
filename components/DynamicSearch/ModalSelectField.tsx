@@ -25,7 +25,7 @@ import {
   Clear as ClearIcon,
   HelpOutline as HelpIcon,
 } from '@mui/icons-material';
-import { DataGrid, GridColDef, GridRowSelectionModel, GridPagination } from '@mui/x-data-grid';
+import { DataGrid, GridColDef, GridPagination } from '@mui/x-data-grid';
 import { DropdownOption } from './types';
 
 interface ModalSelectFieldProps {
@@ -73,7 +73,7 @@ export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
   );
   const [apiOptions, setApiOptions] = useState<DropdownOption[]>([]);
   const [rawRows, setRawRows] = useState<any[]>([]);
-  const [gridSelection, setGridSelection] = useState<GridRowSelectionModel>({ type: 'include', ids: new Set() });
+  const [gridSelection, setGridSelection] = useState<(string | number)[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
@@ -330,7 +330,12 @@ export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
                   columns={columns}
                   getRowId={(row) => row[apiValueField || 'id']}
                   rowSelectionModel={gridSelection}
-                  onRowSelectionModelChange={setGridSelection}
+                  onRowSelectionModelChange={(model) => {
+                    const ids = (model as any)?.ids
+                      ? Array.from((model as any).ids)
+                      : Array.isArray(model) ? model : [];
+                    setGridSelection(ids as (string | number)[]);
+                  }}
                   pageSizeOptions={[25, 50, 100]}
                   initialState={{ pagination: { paginationModel: { pageSize: 25 } } }}
                   density="compact"
@@ -344,10 +349,10 @@ export const ModalSelectField: React.FC<ModalSelectFieldProps> = ({
                             variant="contained"
                             color="primary"
                             fullWidth
-                            disabled={gridSelection.ids.size === 0}
+                            disabled={gridSelection.length === 0}
                             onClick={() => {
-                              const ids = Array.from(gridSelection.ids);
-                              onChange(name, allowMultiple ? ids as (string | number)[] : ids[0] as string | number);
+                              const ids = gridSelection;
+                              onChange(name, allowMultiple ? ids : ids[0]);
                               handleCloseModal();
                             }}
                           >
