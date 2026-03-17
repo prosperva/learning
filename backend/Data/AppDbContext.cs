@@ -9,7 +9,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Attachment>       Attachments       => Set<Attachment>();
     public DbSet<AuditLog>         AuditLogs         => Set<AuditLog>();
     public DbSet<SavedSearch>      SavedSearches     => Set<SavedSearch>();
-    public DbSet<AuditFieldConfig> AuditFieldConfigs => Set<AuditFieldConfig>();
+    public DbSet<AuditFieldConfig>  AuditFieldConfigs  => Set<AuditFieldConfig>();
+    public DbSet<AuditRouteConfig>  AuditRouteConfigs  => Set<AuditRouteConfig>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

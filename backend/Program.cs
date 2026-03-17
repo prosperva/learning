@@ -118,6 +118,16 @@ using (var scope = app.Services.CreateScope())
                 CONSTRAINT UQ_AuditFieldConfigs_Table_Field UNIQUE (TableName, FieldName)
             );
         END
+
+        IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'AuditRouteConfigs')
+        BEGIN
+            CREATE TABLE AuditRouteConfigs (
+                Id        INT IDENTITY(1,1) PRIMARY KEY,
+                Route     NVARCHAR(128) NOT NULL,
+                TableName NVARCHAR(256) NOT NULL,
+                CONSTRAINT UQ_AuditRouteConfigs_Route UNIQUE (Route)
+            );
+        END
         """);
 }
 
