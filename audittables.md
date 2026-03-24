@@ -1,28 +1,30 @@
-using CommonFields.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace CommonFields.API.Services;
+namespace YourAuditLibrary.Services;
 
-public class AuditConfigCache(IServiceScopeFactory scopeFactory)
+public class AuditConfigCache<TContext>(IServiceScopeFactory scopeFactory)
+    where TContext : DbContext
 {
-    private readonly ConcurrentDictionary<string, (HashSet<string> Fields, DateTime ExpiresAt)> _cache = new();
+    private readonly ConcurrentDictionary<string, (List<string> Fields, DateTime ExpiresAt)> _cache = new();
 
-    public async Task<HashSet<string>> GetEnabledFieldsAsync(string tableName)
+    public async Task<List<string>> GetEnabledFieldsAsync(string tableName)
     {
         if (_cache.TryGetValue(tableName, out var entry) && entry.ExpiresAt > DateTime.UtcNow)
             return entry.Fields;
 
         await using var scope = scopeFactory.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var db = scope.ServiceProvider.GetRequiredService<TContext>();
 
-        var enabled = await db.AuditFieldConfigs
+        var fields = await db.Set<AuditFieldConfig>()
             .Where(c => c.TableName == tableName && c.IsEnabled)
             .Select(c => c.FieldName)
             .ToListAsync();
 
-        var fields = enabled.ToHashSet();
         _cache[tableName] = (fields, DateTime.UtcNow.AddSeconds(60));
         return fields;
     }
