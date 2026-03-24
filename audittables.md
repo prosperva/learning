@@ -1,3 +1,36 @@
+using CommonFields.API.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using System.Collections.Concurrent;
+
+namespace CommonFields.API.Services;
+
+public class AuditConfigCache(IServiceScopeFactory scopeFactory)
+{
+    private readonly ConcurrentDictionary<string, (HashSet<string> Fields, DateTime ExpiresAt)> _cache = new();
+
+    public async Task<HashSet<string>> GetEnabledFieldsAsync(string tableName)
+    {
+        if (_cache.TryGetValue(tableName, out var entry) && entry.ExpiresAt > DateTime.UtcNow)
+            return entry.Fields;
+
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var enabled = await db.AuditFieldConfigs
+            .Where(c => c.TableName == tableName && c.IsEnabled)
+            .Select(c => c.FieldName)
+            .ToListAsync();
+
+        var fields = enabled.ToHashSet();
+        _cache[tableName] = (fields, DateTime.UtcNow.AddSeconds(60));
+        return fields;
+    }
+
+    public void Invalidate(string tableName) => _cache.TryRemove(tableName, out _);
+}
+
+
 CREATE TABLE AuditLogs (
     Id        INT IDENTITY(1,1) PRIMARY KEY,
     TableName NVARCHAR(128) NOT NULL,
