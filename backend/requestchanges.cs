@@ -1,54 +1,65 @@
+private static readonly List<string> ExcludedTables =
+    new() { "AuditLogs", "AuditFieldConfigs", "AuditRouteConfigs" };
+
 public async Task<IEnumerable<AuditTableDto>> GetAllTablesAsync()
 {
     var savedConfigs = await db.Set<AuditFieldConfig>().AsNoTracking().ToListAsync();
     var configLookup = savedConfigs.ToDictionary(c => (c.TableName, c.FieldName));
 
-    var allTables  = await GetSchemaValuesAsync("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_NAME");
-    var result     = new List<AuditTableDto>();
+    // Single query — all tables + columns at once
+    var allColumns = await GetAllColumnsAsync();
 
-    foreach (var tableName in allTables.Where(t => !ExcludedTables.Contains(t)))
-    {
-        var columns = await GetSchemaValuesAsync(
-            $"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{tableName}' ORDER BY ORDINAL_POSITION");
-
-        var fields = columns
-            .Where(col => !AuditMetaFields.Contains(col))
-            .Select(col =>
-            {
-                configLookup.TryGetValue((tableName, col), out var saved);
-                return new AuditFieldConfigDto
+    return allColumns
+        .Where(g => !ExcludedTables.Contains(g.Key))
+        .Select(g =>
+        {
+            var fields = g.Value
+                .Where(col => !AuditMetaFields.Contains(col))
+                .Select(col =>
                 {
-                    FieldName   = col,
-                    DisplayName = saved?.DisplayName ?? col,
-                    IsEnabled   = saved?.IsEnabled ?? false,
-                };
-            });
+                    configLookup.TryGetValue((g.Key, col), out var saved);
+                    return new AuditFieldConfigDto
+                    {
+                        FieldName   = col,
+                        DisplayName = saved?.DisplayName ?? col,
+                        IsEnabled   = saved?.IsEnabled ?? false,
+                    };
+                }).ToList();
 
-        result.Add(new AuditTableDto { TableName = tableName, Fields = fields.ToList() });
-    }
-
-    return result;
+            return new AuditTableDto { TableName = g.Key, Fields = fields };
+        });
 }
 
-private async Task<List<string>> GetSchemaValuesAsync(string sql)
+private async Task<Dictionary<string, List<string>>> GetAllColumnsAsync()
 {
-    var conn    = db.Database.GetDbConnection();
-    var results = new List<string>();
+    var result = new Dictionary<string, List<string>>();
+    var conn   = db.Database.GetDbConnection();
 
     await conn.OpenAsync();
     try
     {
         await using var cmd = conn.CreateCommand();
-        cmd.CommandText = sql;
+        cmd.CommandText = @"
+            SELECT TABLE_NAME, COLUMN_NAME
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_CATALOG = DB_NAME()
+            ORDER BY TABLE_NAME, ORDINAL_POSITION";
+
         await using var reader = await cmd.ExecuteReaderAsync();
         while (await reader.ReadAsync())
-            if (!reader.IsDBNull(0))
-                results.Add(reader.GetString(0));
+        {
+            if (reader.IsDBNull(0) || reader.IsDBNull(1)) continue;
+            var table  = reader.GetString(0);
+            var column = reader.GetString(1);
+            if (!result.ContainsKey(table))
+                result[table] = new List<string>();
+            result[table].Add(column);
+        }
     }
     finally
     {
         await conn.CloseAsync();
     }
 
-    return results;
+    return result;
 }
