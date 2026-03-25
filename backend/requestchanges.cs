@@ -1,65 +1,16 @@
-private static readonly List<string> ExcludedTables =
-    new() { "AuditLogs", "AuditFieldConfigs", "AuditRouteConfigs" };
-
-public async Task<IEnumerable<AuditTableDto>> GetAllTablesAsync()
-{
-    var savedConfigs = await db.Set<AuditFieldConfig>().AsNoTracking().ToListAsync();
-    var configLookup = savedConfigs.ToDictionary(c => (c.TableName, c.FieldName));
-
-    // Single query — all tables + columns at once
-    var allColumns = await GetAllColumnsAsync();
-
-    return allColumns
-        .Where(g => !ExcludedTables.Contains(g.Key))
-        .Select(g =>
-        {
-            var fields = g.Value
-                .Where(col => !AuditMetaFields.Contains(col))
-                .Select(col =>
-                {
-                    configLookup.TryGetValue((g.Key, col), out var saved);
-                    return new AuditFieldConfigDto
-                    {
-                        FieldName   = col,
-                        DisplayName = saved?.DisplayName ?? col,
-                        IsEnabled   = saved?.IsEnabled ?? false,
-                    };
-                }).ToList();
-
-            return new AuditTableDto { TableName = g.Key, Fields = fields };
-        });
-}
-
-private async Task<Dictionary<string, List<string>>> GetAllColumnsAsync()
-{
-    var result = new Dictionary<string, List<string>>();
-    var conn   = db.Database.GetDbConnection();
-
-    await conn.OpenAsync();
-    try
-    {
-        await using var cmd = conn.CreateCommand();
-        cmd.CommandText = @"
-            SELECT TABLE_NAME, COLUMN_NAME
-            FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_CATALOG = DB_NAME()
-            ORDER BY TABLE_NAME, ORDINAL_POSITION";
-
-        await using var reader = await cmd.ExecuteReaderAsync();
-        while (await reader.ReadAsync())
-        {
-            if (reader.IsDBNull(0) || reader.IsDBNull(1)) continue;
-            var table  = reader.GetString(0);
-            var column = reader.GetString(1);
-            if (!result.ContainsKey(table))
-                result[table] = new List<string>();
-            result[table].Add(column);
-        }
-    }
-    finally
-    {
-        await conn.CloseAsync();
-    }
-
-    return result;
-}
+System.TypeLoadException: GenericArguments[0], 'TContext', on '.Infrastructure.Services.Repositories.AuditConfigService`1[TContext]' violates the constraint of type parameter 'TContext'.
+   at .Infrastructure.Services.Repositories.AuditConfigService`1.GetAllColumnsAsync()
+   at System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start[TStateMachine](TStateMachine& stateMachine)
+   at .Infrastructure.Services.Repositories.AuditConfigService`1.GetAllColumnsAsync()
+   at .Infrastructure.Services.Repositories.AuditConfigService`1.GetAllTablesAsync()
+   at AuditConfigController.GetAll() in C:\source\\.API\Controllers\AuditConfigController.cs:line 16
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.TaskOfIActionResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Awaited|12_0(ControllerActionInvoker invoker, ValueTask`1 actionResultValueTask)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeInnerFilterAsync>g__Awaited|13_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Routing.EndpointMiddleware.<Invoke>g__AwaitRequestTask|7_0(Endpoint endpoint, Task requestTask, ILogger l
