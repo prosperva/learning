@@ -238,19 +238,27 @@ export default function AuditConfigPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [filter, setFilter] = useState('');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const filterInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, isError } = useAuditConfig();
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value; // capture before async closure
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      setFilter(value);
-      setVisibleCount(PAGE_SIZE);
-    }, 200);
-  };
+  // Native input listener — bypasses React event system entirely, zero overhead while typing
+  useEffect(() => {
+    const el = filterInputRef.current;
+    if (!el) return;
+    const handler = (e: Event) => {
+      const value = (e.target as HTMLInputElement).value;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        setFilter(value);
+        setVisibleCount(PAGE_SIZE);
+      }, 250);
+    };
+    el.addEventListener('input', handler);
+    return () => el.removeEventListener('input', handler);
+  }, []);
 
   const handleSaved = useCallback((msg: string) => setToast(msg), []);
 
@@ -311,7 +319,7 @@ export default function AuditConfigPage() {
         fullWidth
         sx={{ mb: 2 }}
         defaultValue=""
-        onChange={handleFilterChange}
+        inputRef={filterInputRef}
         slotProps={{ input: { startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: 'text.disabled' }} /> } }}
       />
 
