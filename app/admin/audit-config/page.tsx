@@ -232,17 +232,24 @@ const TableSection = React.memo(function TableSection({
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
+const PAGE_SIZE = 20;
+
 export default function AuditConfigPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [filter, setFilter] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, isError } = useAuditConfig();
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value; // capture before async closure
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => setFilter(e.target.value), 200);
+    debounceRef.current = setTimeout(() => {
+      setFilter(value);
+      setVisibleCount(PAGE_SIZE);
+    }, 200);
   };
 
   const handleSaved = useCallback((msg: string) => setToast(msg), []);
@@ -254,12 +261,26 @@ export default function AuditConfigPage() {
     [data, filter]
   );
 
+  const visible = useMemo(() => filtered?.slice(0, visibleCount), [filtered, visibleCount]);
+
+  // Load more when sentinel scrolls into view
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && filtered && visibleCount < filtered.length)
+        setVisibleCount(c => c + PAGE_SIZE);
+    }, { rootMargin: '200px' });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [filtered, visibleCount]);
+
   if (isLoading) {
     return (
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Skeleton variant="text" width={300} height={40} />
         <Skeleton variant="text" width={500} height={24} sx={{ mb: 3 }} />
-        {[1, 2].map(i => (
+        {[1, 2, 3].map(i => (
           <Skeleton key={i} variant="rounded" height={56} sx={{ mb: 1 }} />
         ))}
       </Container>
@@ -289,7 +310,6 @@ export default function AuditConfigPage() {
         size="small"
         fullWidth
         sx={{ mb: 2 }}
-        inputRef={inputRef}
         defaultValue=""
         onChange={handleFilterChange}
         slotProps={{ input: { startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: 'text.disabled' }} /> } }}
@@ -301,9 +321,10 @@ export default function AuditConfigPage() {
         </Typography>
       )}
 
-      {filtered?.map(table => (
+      {visible?.map(table => (
         <TableSection key={table.tableName} table={table} onSaved={handleSaved} />
       ))}
+      <div ref={sentinelRef} />
 
       <Snackbar
         open={!!toast}
