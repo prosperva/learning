@@ -234,16 +234,15 @@ const TableSection = React.memo(function TableSection({
 
 export default function AuditConfigPage() {
   const [toast, setToast] = useState<string | null>(null);
-  const [filterInput, setFilterInput] = useState('');
   const [filter, setFilter] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data, isLoading, isError } = useAuditConfig();
 
-  const handleFilterChange = (value: string) => {
-    setFilterInput(value);
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => setFilter(value), 200);
+    debounceRef.current = setTimeout(() => setFilter(e.target.value), 200);
   };
 
   const handleSaved = useCallback((msg: string) => setToast(msg), []);
@@ -290,14 +289,15 @@ export default function AuditConfigPage() {
         size="small"
         fullWidth
         sx={{ mb: 2 }}
-        value={filterInput}
-        onChange={e => handleFilterChange(e.target.value)}
+        inputRef={inputRef}
+        defaultValue=""
+        onChange={handleFilterChange}
         slotProps={{ input: { startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: 'text.disabled' }} /> } }}
       />
 
       {filtered?.length === 0 && (
         <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-          No tables match &quot;{filterInput}&quot;.
+          No tables match &quot;{filter}&quot;.
         </Typography>
       )}
 
