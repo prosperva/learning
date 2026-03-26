@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Accordion,
   AccordionDetails,
@@ -73,7 +73,7 @@ function FieldRow({
 
 // ── Table section (owns local state + save button) ────────────────────────────
 
-function TableSection({
+const TableSection = React.memo(function TableSection({
   table,
   onSaved,
 }: {
@@ -228,19 +228,32 @@ function TableSection({
       </AccordionDetails>
     </Accordion>
   );
-}
+});
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function AuditConfigPage() {
   const [toast, setToast] = useState<string | null>(null);
+  const [filterInput, setFilterInput] = useState('');
   const [filter, setFilter] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data, isLoading, isError } = useAuditConfig();
 
-  const filtered = filter.trim()
-    ? data?.filter(t => t.tableName.toLowerCase().includes(filter.toLowerCase()))
-    : data;
+  const handleFilterChange = (value: string) => {
+    setFilterInput(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setFilter(value), 200);
+  };
+
+  const handleSaved = useCallback((msg: string) => setToast(msg), []);
+
+  const filtered = useMemo(
+    () => filter.trim()
+      ? data?.filter(t => t.tableName.toLowerCase().includes(filter.toLowerCase()))
+      : data,
+    [data, filter]
+  );
 
   if (isLoading) {
     return (
@@ -277,19 +290,19 @@ export default function AuditConfigPage() {
         size="small"
         fullWidth
         sx={{ mb: 2 }}
-        value={filter}
-        onChange={e => setFilter(e.target.value)}
+        value={filterInput}
+        onChange={e => handleFilterChange(e.target.value)}
         slotProps={{ input: { startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: 'text.disabled' }} /> } }}
       />
 
       {filtered?.length === 0 && (
         <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-          No tables match &quot;{filter}&quot;.
+          No tables match &quot;{filterInput}&quot;.
         </Typography>
       )}
 
       {filtered?.map(table => (
-        <TableSection key={table.tableName} table={table} onSaved={msg => setToast(msg)} />
+        <TableSection key={table.tableName} table={table} onSaved={handleSaved} />
       ))}
 
       <Snackbar
