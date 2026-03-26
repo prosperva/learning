@@ -1,1 +1,12 @@
-To fix this error either change the JSON to a JSON array (e.g. [1,2,3]) or change the deserialized type so that it is a normal .NET type (e.g. not a primitive type like integer, not a collection type like an array or List<T>) that can be deserialized from a JSON object. JsonObjectAttribute can also be added to the type to force it to deserialize from a JSON object.
+[
+    {
+        "fieldName": "PCA",
+        "isEnabled": true,
+        "displayName": "PCA"
+    },
+    {
+        "fieldName": "CA",
+        "isEnabled": true,
+        "displayName": "CA"
+    }
+]
