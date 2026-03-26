@@ -258,7 +258,7 @@ export default function AuditConfigPage() {
     };
     el.addEventListener('input', handler);
     return () => el.removeEventListener('input', handler);
-  }, []);
+  }, [isLoading]);
 
   const handleSaved = useCallback((msg: string) => setToast(msg), []);
 
