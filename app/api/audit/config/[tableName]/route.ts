@@ -12,5 +12,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(await request.json()),
   });
-  return NextResponse.json(await res.json(), { status: res.status });
+  const text = await res.text();
+  try {
+    return NextResponse.json(JSON.parse(text), { status: res.status });
+  } catch {
+    return NextResponse.json({ error: text }, { status: res.status });
+  }
 }
