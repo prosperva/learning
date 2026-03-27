@@ -1,28 +1,68 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createAxiosInstanceWithToken } from "@/utils/axiosInstance";
-import { getValidAccessToken } from "@/utils/getValidAccessToken";
+public interface IAuditRouteConfigRepository
+{
+    Task<IEnumerable<AuditRouteConfig>> GetAllAsync();
+    Task<AuditRouteConfig> CreateAsync(AuditRouteConfig body);
+    Task<AuditRouteConfig?> UpdateAsync(int id, AuditRouteConfig body);
+    Task<bool> DeleteAsync(int id);
+}
 
-type RouteParams = { params: Promise<{ tableName: string }> };
+public class AuditRouteConfigRepository(AuditDbContext db, AuditEntityRegistry registry) : IAuditRouteConfigRepository
+{
+    public async Task<IEnumerable<AuditRouteConfig>> GetAllAsync() =>
+        await db.Set<AuditRouteConfig>().AsNoTracking().OrderBy(r => r.Route).ToListAsync();
 
-export async function PUT(request: NextRequest, { params }: RouteParams) {
-    const token = await getValidAccessToken(request);
-    if (!token) {
-        return NextResponse.json({ error: "Unauthorized or token expired" }, { status: 401 });
+    public async Task<AuditRouteConfig> CreateAsync(AuditRouteConfig body)
+    {
+        var entry = new AuditRouteConfig { Route = body.Route.Trim(), TableName = body.TableName.Trim() };
+        db.Set<AuditRouteConfig>().Add(entry);
+        await db.SaveChangesAsync();
+        registry.Reload();
+        return entry;
     }
-  const { tableName } = await params;
-  const axios = createAxiosInstanceWithToken(token);
 
-  const body = await request.json();
+    public async Task<AuditRouteConfig?> UpdateAsync(int id, AuditRouteConfig body)
+    {
+        var entry = await db.Set<AuditRouteConfig>().FindAsync(id);
+        if (entry is null) return null;
+        entry.Route     = body.Route.Trim();
+        entry.TableName = body.TableName.Trim();
+        await db.SaveChangesAsync();
+        registry.Reload();
+        return entry;
+    }
 
-  const res = await axios.put(`/auditconfig/${tableName}`, {
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  const text = await res.statusText;
-  try {
-      return NextResponse.json(JSON.parse(text), { status: res.status });
-  }
-  catch (e){
-      return NextResponse.json({error: e}, { status: res.status });
-  }
+    public async Task<bool> DeleteAsync(int id)
+    {
+        var entry = await db.Set<AuditRouteConfig>().FindAsync(id);
+        if (entry is null) return false;
+        db.Set<AuditRouteConfig>().Remove(entry);
+        await db.SaveChangesAsync();
+        registry.Reload();
+        return true;
+    }
+}
+
+
+
+[ApiController]
+[Route("api/audit/route-config")]
+public class AuditRouteConfigController(IAuditRouteConfigRepository repo) : ControllerBase
+{
+    [HttpGet]
+    public async Task<IActionResult> GetAll() => Ok(await repo.GetAllAsync());
+
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] AuditRouteConfig body) =>
+        CreatedAtAction(nameof(GetAll), await repo.CreateAsync(body));
+
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update(int id, [FromBody] AuditRouteConfig body)
+    {
+        var result = await repo.UpdateAsync(id, body);
+        return result is null ? NotFound() : Ok(result);
+    }
+
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id) =>
+        await repo.DeleteAsync(id) ? NoContent() : NotFound();
 }
