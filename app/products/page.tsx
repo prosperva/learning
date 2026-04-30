@@ -313,7 +313,7 @@ export default function ProductsPage() {
                       prefetchRoute(`/products/edit/${params.row.id}`);
                     }}
                   >
-                    <LibraryBooksIcon fontSize="small" />
+                    <LibraryBooksIcon fontSize="small" sx={{ color: '#0070f3' }} />
                   </IconButton>
                 </Tooltip>
               </Box>
@@ -1018,16 +1018,10 @@ export default function ProductsPage() {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
+    <Container maxWidth={false} disableGutters sx={{ py: 4, px: 3, bgcolor: '#f5f5f5', minHeight: '100vh' }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4 }}>
         <Box>
-          <Typography variant="h3" component="h1" gutterBottom>
-            Products
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary" paragraph>
-            Search and manage your product inventory with filters, export options, and saved searches.
-          </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Tooltip title="Refresh data">
@@ -1045,12 +1039,11 @@ export default function ProductsPage() {
         </Box>
       </Box>
 
-      <Alert severity="info" sx={{ mb: 2 }}>
-        <strong>Features:</strong> Grid or Report view, export to PDF/Excel/CSV, saved searches, and filter persistence when editing.
-      </Alert>
-
       {/* Search + Results unified */}
       <Paper elevation={2} sx={{ p: 3 }}>
+        <Typography sx={{ mb: 2, fontFamily: 'Arial, sans-serif', fontSize: '1.5rem', lineHeight: 1.334, fontWeight: 400 }}>
+          Search Products
+        </Typography>
         <DynamicSearch
           key={JSON.stringify(state.filters)}
           fields={searchFields}
@@ -1073,6 +1066,7 @@ export default function ProductsPage() {
           reportOptions={reportOptions}
           initialValues={state.filters}
           defaultExpanded={!hasSearched}
+          searchTitle="Search Criteria"
         />
 
         {/* Search Results */}

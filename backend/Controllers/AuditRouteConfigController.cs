@@ -33,7 +33,7 @@ public class AuditRouteConfigController(AppDbContext db, AuditEntityRegistry reg
         entry.Route     = body.Route.Trim();
         entry.TableName = body.TableName.Trim();
         await db.SaveChangesAsync();
-        registry.Reload();
+        registry.Reload();a
         return Ok(entry);
     }
 

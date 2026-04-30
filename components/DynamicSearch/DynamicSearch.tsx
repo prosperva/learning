@@ -36,7 +36,8 @@ import {
 } from '@mui/material';
 import {
   Search as SearchIcon,
-  Refresh as RefreshIcon,
+
+  SearchOff as SearchOffIcon,
   Save as SaveIcon,
   BookmarkBorder as BookmarkBorderIcon,
   ExpandMore as ExpandMoreIcon,
@@ -620,18 +621,18 @@ export const DynamicSearch: React.FC<DynamicSearchProps> = ({
         </Paper>
       )}
 
-      <Paper elevation={formMode === 'edit' ? 0 : 3} sx={{ p: formMode === 'edit' ? 0 : 3, mb: 2 }}>
+      <Paper elevation={formMode === 'edit' ? 0 : 3} sx={{ p: formMode === 'edit' ? 0 : 2, mb: 2 }}>
         {formMode !== 'edit' && (
           <Box
             display="flex"
             justifyContent="space-between"
             alignItems="center"
-            mb={2}
+            mb={searchExpanded ? 2 : 0}
             onClick={() => setSearchExpanded(!searchExpanded)}
             sx={{ cursor: 'pointer', userSelect: 'none' }}
           >
-            <Typography variant="h5" component="h2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <SearchIcon color="primary" />
+            <Typography component="h2" sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'black', fontFamily: 'Arial, sans-serif', fontSize: '0.875rem', lineHeight: 1.47, fontWeight: 700, margin: 0, padding: 0 }}>
+              <SearchIcon sx={{ color: 'black', fontSize: '1.25rem', width: '1em', height: '1em', position: 'relative', top: '1px' }} />
               {searchTitle}
             </Typography>
             <IconButton component="span" tabIndex={-1}>
@@ -735,19 +736,20 @@ export const DynamicSearch: React.FC<DynamicSearchProps> = ({
             <Box display="flex" gap={2} flexWrap="wrap">
               <Button
                 variant="contained"
-                color="primary"
                 startIcon={<SearchIcon />}
                 onClick={handleSearch}
                 size="large"
+                sx={{ bgcolor: '#1a2744', color: '#fff', borderRadius: '6px', textTransform: 'none', '&:hover': { bgcolor: '#1976d2' } }}
               >
                 {searchButtonText}
               </Button>
 
               <Button
                 variant="outlined"
-                startIcon={<RefreshIcon />}
+                startIcon={<SearchOffIcon />}
                 onClick={handleReset}
                 size="large"
+                sx={{ borderColor: '#90caf9', color: '#1976d2', borderRadius: '6px', bgcolor: '#fff', textTransform: 'none', '&:hover': { borderColor: '#1976d2', bgcolor: '#f5f9ff' } }}
               >
                 {resetButtonText}
               </Button>
@@ -759,6 +761,7 @@ export const DynamicSearch: React.FC<DynamicSearchProps> = ({
                   startIcon={<SaveIcon />}
                   onClick={() => setSaveDialogOpen(true)}
                   size="large"
+                  sx={{ textTransform: 'none' }}
                 >
                   Save Search
                 </Button>

@@ -92,6 +92,26 @@ const FieldWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       '& .MuiInputBase-root': {
         minWidth: 'unset',
       },
+      '& .MuiOutlinedInput-notchedOutline': {
+        borderColor: '#1976d2',
+      },
+      '&:hover .MuiOutlinedInput-notchedOutline': {
+        borderColor: '#1565c0',
+      },
+      '& .MuiInputBase-input': {
+        font: 'inherit',
+        letterSpacing: 'inherit',
+        color: 'currentColor',
+        padding: '16.5px 14px',
+        border: 0,
+        boxSizing: 'content-box',
+        background: 'none',
+        height: '1.4375em',
+        margin: 0,
+        display: 'block',
+        minWidth: 0,
+        width: '100%',
+      },
     }}
   >
     {children}
@@ -227,7 +247,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
         <FieldWrapper>
           <TextField
             fullWidth
-            size="small"
+            size="medium"
             label={<LabelWithTooltip label={field.label} tooltip={field.tooltip} />}
             name={field.name}
             value={value || ''}
@@ -238,6 +258,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
             disabled={isDisabled}
             variant="outlined"
             error={!!error}
+            slotProps={{ inputLabel: { shrink: true } }}
           />
           {renderCopyButton()}
         </FieldWrapper>
@@ -248,7 +269,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
         <FieldWrapper>
           <TextField
             fullWidth
-            size="small"
+            size="medium"
             type="number"
             label={<LabelWithTooltip label={field.label} tooltip={field.tooltip} />}
             name={field.name}
@@ -260,6 +281,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
             disabled={isDisabled}
             variant="outlined"
             error={!!error}
+            slotProps={{ inputLabel: { shrink: true } }}
           />
         </FieldWrapper>
       );
@@ -278,11 +300,15 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
               slotProps={{
                 textField: {
                   fullWidth: true,
-                  size: 'small',
+                  size: 'medium',
                   required: isRequired,
                   helperText: error || field.helperText,
                   variant: 'outlined',
                   error: !!error,
+                  sx: {
+                    '& .MuiOutlinedInput-notchedOutline': { borderColor: '#1976d2' },
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#1565c0' },
+                  },
                 },
               }}
             />
@@ -297,7 +323,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
       return (
         <FieldWrapper>
           <Autocomplete
-            size="small"
+            size="medium"
             options={options}
             value={selectedOption}
             onChange={(_, newValue) => {
@@ -317,6 +343,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
                 helperText={error || field.helperText}
                 variant="outlined"
                 error={!!error}
+                slotProps={{ inputLabel: { shrink: true } }}
               />
             )}
             fullWidth
@@ -353,7 +380,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
           <Box sx={{ width: '100%' }}>
             <Autocomplete
               multiple
-              size="small"
+              size="medium"
               options={multiselectOptions}
               value={selectedOptions}
               onChange={(_, newValue) => {
@@ -388,7 +415,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
                     {...getTagProps({ index })}
                     key={option.value ?? option.label}
                     label={option.label}
-                    size="small"
+                    size="medium"
                   />
                 ))
               }
@@ -396,7 +423,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
             />
             <Stack direction="row" spacing={0.5} sx={{ mt: 0.5 }} alignItems="center">
               <Button
-                size="small"
+                size="medium"
                 onClick={handleSelectAll}
                 disabled={isDisabled || allSelected}
                 variant="outlined"
@@ -404,7 +431,7 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onCh
                 Select All
               </Button>
               <Button
-                size="small"
+                size="medium"
                 onClick={handleClearAll}
                 disabled={isDisabled || !value || value.length === 0}
                 variant="outlined"

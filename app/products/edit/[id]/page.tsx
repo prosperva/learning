@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -28,11 +28,19 @@ import {
   InputAdornment,
   FormControlLabel,
   Checkbox,
+  IconButton,
 } from '@mui/material';
-import { ArrowBack as ArrowBackIcon, Save as SaveIcon, OpenInNew as OpenInNewIcon, Search as SearchIcon } from '@mui/icons-material';
+import {
+  ArrowBack as ArrowBackIcon,
+  Save as SaveIcon,
+  OpenInNew as OpenInNewIcon,
+  Search as SearchIcon,
+  Refresh as RefreshIcon,
+  ArrowForward as ArrowForwardIcon,
+} from '@mui/icons-material';
 import { useGridManagement } from '@/hooks/useGridManagement';
 import { useProduct, useUpdateProduct, type UpdateProductInput } from '@/hooks/useProducts';
-import { useCategories, useDropdownOptions } from '@/hooks/useDropdownOptions';
+import { useCategories } from '@/hooks/useDropdownOptions';
 import AttachmentsSection, { type Attachment } from '@/components/Attachments';
 import AuditHistoryCompact from '@/components/History/AuditHistoryCompact';
 // import { LockService } from '@/lib/lockService';
@@ -67,11 +75,14 @@ const statuses = [
 export default function ProductEditPage() {
   const params = useParams();
   const id = Number(params.id);
+  const router = useRouter();
   // const currentUser = 'demo_user@example.com'; // In production, get from auth context
   // const lockReleasedRef = useRef(false);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState('');
   const [toast, setToast] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
+  const [unsavedModalOpen, setUnsavedModalOpen] = useState(false);
+  const [pendingNav, setPendingNav] = useState<(() => void) | null>(null);
   // Only fetch categories when the picker modal is opened — avoids an unnecessary
   // network request on every page load since categories are rarely needed.
   const { data: categories = [], isLoading: categoriesLoading } = useCategories({ enabled: categoryModalOpen });
@@ -124,6 +135,7 @@ export default function ProductEditPage() {
     isLoading,
     isError,
     error,
+    refetch,
   } = useProduct(id);
 
   // Defer secondary sections (attachments, audit) until after the form has painted.
@@ -192,21 +204,38 @@ export default function ProductEditPage() {
     }
   };
 
-  // Handle back navigation
-  const handleBack = () => {
-    returnToGrid();
+  // Guard navigation — show modal if form is dirty
+  const guardedNav = (action: () => void) => {
+    if (isDirty) {
+      setPendingNav(() => action);
+      setUnsavedModalOpen(true);
+    } else {
+      action();
+    }
   };
+
+  // Handle back navigation
+  const handleBack = () => guardedNav(() => returnToGrid());
+
+  // Warn on browser close/refresh
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isDirty) { e.preventDefault(); }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty]);
 
   // Loading skeleton
   if (isLoading) {
     return (
-      <Container maxWidth={false} sx={{ py: 4 }}>
+      <Container maxWidth={false} sx={{ py: 4, bgcolor: '#f5f5f5', minHeight: '200vh' }}>
         <Button startIcon={<ArrowBackIcon />} onClick={handleBack} sx={{ mb: 3 }}>
           Back to Products
         </Button>
         <Skeleton variant="text" width={300} height={40} sx={{ mb: 1 }} />
         <Skeleton variant="text" width={200} height={24} sx={{ mb: 3 }} />
-        <Paper elevation={2} sx={{ p: 3 }}>
+        <Paper elevation={2} sx={{ p: 3, borderRadius: '8px' }}>
           <Box sx={{ maxWidth: { xs: '100%', sm: '80%', md: '65%', lg: '45%' }, display: 'flex', flexDirection: 'column', gap: 3 }}>
             <Skeleton variant="rounded" height={56} />
             <Skeleton variant="rounded" height={56} />
@@ -225,7 +254,7 @@ export default function ProductEditPage() {
   // Error state
   if (isError) {
     return (
-      <Container maxWidth={false} sx={{ py: 4 }}>
+      <Container maxWidth={false} sx={{ py: 4, bgcolor: '#f5f5f5', minHeight: '200vh' }}>
         <Button startIcon={<ArrowBackIcon />} onClick={handleBack} sx={{ mb: 2 }}>
           Back to Products
         </Button>
@@ -236,20 +265,70 @@ export default function ProductEditPage() {
     );
   }
 
-  return (
-    <Container maxWidth={false} sx={{ py: 4 }}>
-      {/* Back Button */}
-      <Button startIcon={<ArrowBackIcon />} onClick={handleBack} sx={{ mb: 3 }}>
-        Back to Products
-      </Button>
+  const handlePrev = () => guardedNav(() => router.push(`/products/edit/${id - 1}`));
+  const handleNext = () => guardedNav(() => router.push(`/products/edit/${id + 1}`));
 
-      {/* Header */}
-      <Typography variant="h4" component="h1" gutterBottom>
-        Edit Product
-      </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-        Editing: {product?.name} (ID: {id})
-      </Typography>
+  return (
+    <Container maxWidth={false} sx={{ py: 4, bgcolor: '#f5f5f5', minHeight: '200vh' }}>
+      {/* Toolbar */}
+      <Paper
+        elevation={2}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          px: 2,
+          py: 0.5,
+          mb: 0.75,
+          minHeight: '64px',
+          borderRadius: '8px',
+          bgcolor: '#fff',
+        }}
+      >
+        <IconButton onClick={handleBack} sx={{ color: '#212121' }}>
+          <ArrowBackIcon sx={{ fontSize: '1.5rem', width: '1em', height: '1em' }} />
+        </IconButton>
+        <Divider orientation="vertical" sx={{ mx: 0.5, height: '36px', alignSelf: 'center' }} />
+        <Button
+          startIcon={isSubmitting || updateMutation.isPending ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+          onClick={handleSubmit(onSubmit)}
+          disabled={isSubmitting || updateMutation.isPending || !isDirty}
+          sx={{ textTransform: 'none', color: 'text.primary', fontWeight: 500 }}
+        >
+          Save
+        </Button>
+        <Button
+          startIcon={<RefreshIcon />}
+          onClick={() => refetch()}
+          sx={{ textTransform: 'none', color: 'text.primary', fontWeight: 500 }}
+        >
+          Refresh
+        </Button>
+        <Divider orientation="vertical" sx={{ mx: 0.5, height: '36px', alignSelf: 'center' }} />
+        <Button
+          startIcon={<ArrowBackIcon sx={{ fontSize: '1.5rem', width: '1em', height: '1em', color: '#212121' }} />}
+          onClick={handlePrev}
+          disabled={id <= 1}
+          sx={{ textTransform: 'none', color: 'text.primary', fontWeight: 500 }}
+        >
+          Back
+        </Button>
+        <Button
+          endIcon={<ArrowForwardIcon sx={{ fontSize: '1.5rem', width: '1em', height: '1em', color: '#212121' }} />}
+          onClick={handleNext}
+          sx={{ textTransform: 'none', color: 'text.primary', fontWeight: 500 }}
+        >
+          Next
+        </Button>
+        <Divider orientation="vertical" sx={{ mx: 0.5, height: '36px', alignSelf: 'center' }} />
+      </Paper>
+
+      {/* Record Info */}
+      <Paper elevation={2} sx={{ p: 2, mb: 0.75, borderRadius: '8px', bgcolor: '#fff', width: '100%' }}>
+        <Typography variant="body2" color="text.secondary">
+          Product ID: <strong>{id}</strong>
+        </Typography>
+      </Paper>
 
       {/* Mutation Error */}
       {updateMutation.isError && (
@@ -259,7 +338,7 @@ export default function ProductEditPage() {
       )}
 
       {/* Edit Form */}
-      <Paper elevation={2} sx={{ p: 3 }}>
+      <Paper elevation={2} sx={{ p: 3, borderRadius: '8px' }}>
         <form onSubmit={handleSubmit(onSubmit)}>
           <Box sx={{ maxWidth: { xs: '100%', sm: '80%', md: '65%', lg: '45%' }, display: 'flex', flexDirection: 'column', gap: 3 }}>
             {/* Product Name */}
@@ -292,6 +371,8 @@ export default function ProductEditPage() {
                     fullWidth
                     required
                     disabled
+                    size="medium"
+                    sx={{ '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: '#1976d2' }, '&:hover fieldset': { borderColor: '#1565c0' } } }}
                   />
                 )}
               />
@@ -318,6 +399,8 @@ export default function ProductEditPage() {
                   helperText={errors.status?.message}
                   fullWidth
                   required
+                  size="medium"
+                  sx={{ '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: '#1976d2' }, '&:hover fieldset': { borderColor: '#1565c0' } } }}
                 >
                   {statuses.map((opt) => (
                     <MenuItem key={opt.value} value={opt.value}>
@@ -341,6 +424,8 @@ export default function ProductEditPage() {
                   helperText={errors.price?.message}
                   fullWidth
                   required
+                  size="medium"
+                  sx={{ '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: '#1976d2' }, '&:hover fieldset': { borderColor: '#1565c0' } } }}
                   slotProps={{
                     htmlInput: { min: 0, step: 0.01 },
                   }}
@@ -362,6 +447,8 @@ export default function ProductEditPage() {
                   helperText={errors.stock?.message}
                   fullWidth
                   required
+                  size="medium"
+                  sx={{ '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: '#1976d2' }, '&:hover fieldset': { borderColor: '#1565c0' } } }}
                   slotProps={{
                     htmlInput: { min: 0, step: 1 },
                   }}
@@ -385,6 +472,8 @@ export default function ProductEditPage() {
                 }
               }}
               fullWidth
+              size="medium"
+              sx={{ '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: '#1976d2' }, '&:hover fieldset': { borderColor: '#1565c0' } } }}
               helperText="Select a template to append to the description"
             >
               {descriptionTemplates.map((opt) => (
@@ -407,6 +496,8 @@ export default function ProductEditPage() {
                   fullWidth
                   multiline
                   rows={4}
+                  size="medium"
+                  sx={{ '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: '#1976d2' }, '&:hover fieldset': { borderColor: '#1565c0' } } }}
                 />
               )}
             />
@@ -445,32 +536,6 @@ export default function ProductEditPage() {
               />
             )}
 
-            <Divider />
-
-            {/* Action Buttons */}
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-              <Button
-                variant="outlined"
-                onClick={handleBack}
-                disabled={isSubmitting || updateMutation.isPending}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                startIcon={
-                  isSubmitting || updateMutation.isPending ? (
-                    <CircularProgress size={20} color="inherit" />
-                  ) : (
-                    <SaveIcon />
-                  )
-                }
-                disabled={isSubmitting || updateMutation.isPending || !isDirty}
-              >
-                {isSubmitting || updateMutation.isPending ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </Box>
           </Box>
         </form>
       </Paper>
@@ -493,6 +558,31 @@ export default function ProductEditPage() {
           <AuditHistoryCompact recordId={id} />
         </>
       )}
+
+      {/* Unsaved Changes Modal */}
+      <Dialog open={unsavedModalOpen} onClose={() => setUnsavedModalOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Unsaved Changes</DialogTitle>
+        <DialogContent>
+          <Typography>You have unsaved changes. If you leave, your changes will be lost.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setUnsavedModalOpen(false)} sx={{ textTransform: 'none' }}>
+            Stay
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            sx={{ textTransform: 'none' }}
+            onClick={() => {
+              setUnsavedModalOpen(false);
+              pendingNav?.();
+              setPendingNav(null);
+            }}
+          >
+            Leave without saving
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Category Picker Modal */}
       <Dialog open={categoryModalOpen} onClose={() => setCategoryModalOpen(false)} maxWidth="xs" fullWidth>
