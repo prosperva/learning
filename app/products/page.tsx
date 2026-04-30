@@ -834,6 +834,13 @@ export default function ProductsPage() {
             </Box>
           ),
         }}
+        sx={{
+          border: 'none',
+          '& .MuiDataGrid-columnHeaders': { bgcolor: '#f5f5f5' },
+          '& .MuiDataGrid-columnHeader': { bgcolor: '#f5f5f5' },
+          '& .MuiDataGrid-cell': { borderBottom: 'none' },
+          '& .MuiDataGrid-footerContainer': { borderTop: 'none' },
+        }}
       />
     </Paper>
   );

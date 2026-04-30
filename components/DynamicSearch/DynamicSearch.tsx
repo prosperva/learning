@@ -733,13 +733,13 @@ export const DynamicSearch: React.FC<DynamicSearchProps> = ({
               </Box>
             )}
 
-            <Box display="flex" gap={2} flexWrap="wrap">
+            <Box display="flex" gap={2} flexWrap="wrap" sx={{ mt: 4 }}>
               <Button
                 variant="contained"
                 startIcon={<SearchIcon />}
                 onClick={handleSearch}
                 size="large"
-                sx={{ bgcolor: '#1a2744', color: '#fff', borderRadius: '6px', textTransform: 'none', '&:hover': { bgcolor: '#1976d2' } }}
+                sx={{ bgcolor: '#1a2744', color: '#fff', borderRadius: '6px', textTransform: 'none', width: '250px', '&:hover': { bgcolor: '#1976d2' } }}
               >
                 {searchButtonText}
               </Button>
@@ -749,7 +749,7 @@ export const DynamicSearch: React.FC<DynamicSearchProps> = ({
                 startIcon={<SearchOffIcon />}
                 onClick={handleReset}
                 size="large"
-                sx={{ borderColor: '#90caf9', color: '#1976d2', borderRadius: '6px', bgcolor: '#fff', textTransform: 'none', '&:hover': { borderColor: '#1976d2', bgcolor: '#f5f9ff' } }}
+                sx={{ borderColor: '#90caf9', color: '#1976d2', borderRadius: '6px', bgcolor: '#fff', textTransform: 'none', width: '250px', '&:hover': { borderColor: '#1976d2', bgcolor: '#f5f9ff' } }}
               >
                 {resetButtonText}
               </Button>
@@ -761,7 +761,7 @@ export const DynamicSearch: React.FC<DynamicSearchProps> = ({
                   startIcon={<SaveIcon />}
                   onClick={() => setSaveDialogOpen(true)}
                   size="large"
-                  sx={{ textTransform: 'none' }}
+                  sx={{ textTransform: 'none', width: '250px' }}
                 >
                   Save Search
                 </Button>
