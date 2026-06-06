@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import ThemeRegistry from './ThemeRegistry';
 import { Providers } from './providers';
+import TopNav from '@/components/TopNav';
 
 export const metadata: Metadata = {
   title: "Dynamic Search Component Demo",
@@ -17,6 +18,7 @@ export default function RootLayout({
       <body>
         <ThemeRegistry>
           <Providers>
+            <TopNav />
             {children}
           </Providers>
         </ThemeRegistry>

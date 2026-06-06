@@ -38,6 +38,7 @@ import { useCategories } from '@/hooks/useDropdownOptions';
 import AttachmentsSection, { type Attachment } from '@/components/Attachments';
 import AuditHistoryCompact from '@/components/History/AuditHistoryCompact';
 import { ModalSelectField } from '@/components/DynamicSearch/ModalSelectField';
+import { PAGE_HEIGHT } from '@/lib/layout';
 // import { LockService } from '@/lib/lockService';
 
 // Form validation schema
@@ -218,6 +219,7 @@ export default function ProductEditPage() {
     }
   }, []);
 
+
   // Lock body scroll while on this page
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -277,7 +279,7 @@ export default function ProductEditPage() {
   const handleNext = () => guardedNav(() => router.push(`/products/edit/${id + 1}`));
 
   return (
-    <Container maxWidth={false} disableGutters sx={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', bgcolor: '#f5f5f5', px: 3, pt: 2 }}>
+    <Container maxWidth={false} disableGutters sx={{ height: PAGE_HEIGHT, display: 'flex', flexDirection: 'column', overflow: 'hidden', bgcolor: '#f5f5f5', px: 3, pt: 2 }}>
       {/* Fixed header: Toolbar + Record Info */}
       <Box sx={{ flexShrink: 0, bgcolor: '#f5f5f5', pb: 0.75 }}>
       {/* Toolbar */}
