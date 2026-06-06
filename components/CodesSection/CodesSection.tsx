@@ -83,7 +83,7 @@ export default function CodesSection({ codes, onChange, validateUrl = '/api/mock
       const res = await fetch(validateUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: trimmed }),
+        body: JSON.stringify({ code: trimmed, codeType: codeType || undefined, priority: codePriority || undefined }),
       });
       const data = await res.json();
       onChange(
