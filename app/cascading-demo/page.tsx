@@ -19,6 +19,7 @@ import {
 } from '@mui/icons-material';
 import CascadingDropdowns from '@/components/CascadingDropdowns/CascadingDropdowns';
 import CodesSection, { CodeEntry } from '@/components/CodesSection/CodesSection';
+import { useSaveForm } from '@/hooks/useSaveForm';
 
 interface Item {
   id: string | number;
@@ -53,35 +54,28 @@ export default function CascadingDemoPage() {
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<{ parent: Item; child: Item | null } | null>(null);
   const [codes, setCodes] = useState<CodeEntry[]>([]);
-  const [saving, setSaving] = useState(false);
-  const [saveResult, setSaveResult] = useState<{ referenceNumber: string; submittedAt: string; link?: string } | null>(null);
   const [toast, setToast] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
 
   const hasValidating = codes.some((c) => c.status === 'validating');
 
-  async function handleSave() {
-    setSaving(true);
-    setSaveResult(null);
-    try {
-      const res = await fetch('/api/mock/save-form', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          description,
-          category: category?.parent?.name,
-          subCategory: category?.child?.name ?? null,
-          codes: codes.filter((c) => c.status === 'valid').map((c) => c.code),
-        }),
-      });
-      const data = await res.json();
-      setSaveResult(data);
-      setToast({ message: `Saved! Reference: ${data.referenceNumber}`, severity: 'success' });
-    } catch {
-      setToast({ message: 'Failed to save. Please try again.', severity: 'error' });
-    } finally {
-      setSaving(false);
-    }
+  const saveForm = useSaveForm();
+
+  function handleSave() {
+    saveForm.mutate(
+      {
+        name,
+        description,
+        category: category?.parent?.name,
+        subCategory: category?.child?.name ?? null,
+        codes: codes
+          .filter((c) => c.status === 'valid' || c.status === 'saved')
+          .map((c) => ({ code: c.code, type: c.type, priority: c.priority })),
+      },
+      {
+        onSuccess: (data) => setToast({ message: `Saved! Reference: ${data.referenceNumber}`, severity: 'success' }),
+        onError: () => setToast({ message: 'Failed to save. Please try again.', severity: 'error' }),
+      }
+    );
   }
 
   return (
@@ -146,11 +140,11 @@ export default function CascadingDemoPage() {
         <Divider sx={{ mt: 3, mb: 3 }} />
 
         {/* Save */}
-        {saveResult && (
+        {saveForm.data && (
           <Alert severity="success" sx={{ mb: 2 }}>
-            <strong>Saved!</strong> Reference: <strong>{saveResult.referenceNumber}</strong>
-            {saveResult.link && (
-              <> &nbsp;·&nbsp; <Box component="a" href={saveResult.link} target="_blank" rel="noopener noreferrer" sx={{ color: 'inherit' }}>{saveResult.link}</Box></>
+            <strong>Saved!</strong> Reference: <strong>{saveForm.data.referenceNumber}</strong>
+            {saveForm.data.link && (
+              <> &nbsp;·&nbsp; <Box component="a" href={saveForm.data.link} target="_blank" rel="noopener noreferrer" sx={{ color: 'inherit' }}>{saveForm.data.link}</Box></>
             )}
           </Alert>
         )}
@@ -159,7 +153,7 @@ export default function CascadingDemoPage() {
             variant="outlined"
             size="large"
             startIcon={<SearchOffIcon />}
-            onClick={() => { setName(''); setDescription(''); setCategory(null); setCodes([]); setSaveResult(null); }}
+            onClick={() => { setName(''); setDescription(''); setCategory(null); setCodes([]); saveForm.reset(); }}
             sx={{ textTransform: 'none', borderRadius: '6px', borderColor: '#90caf9', color: '#1976d2', bgcolor: '#fff', width: '250px', '&:hover': { borderColor: '#1976d2', bgcolor: '#f5f9ff' } }}
           >
             Reset
@@ -167,12 +161,12 @@ export default function CascadingDemoPage() {
           <Button
             variant="contained"
             size="large"
-            startIcon={saving ? <CircularProgress size={18} color="inherit" /> : <SaveIcon />}
+            startIcon={saveForm.isPending ? <CircularProgress size={18} color="inherit" /> : <SaveIcon />}
             onClick={handleSave}
-            disabled={saving || !name || hasValidating}
+            disabled={saveForm.isPending || !name || hasValidating}
             sx={{ textTransform: 'none', borderRadius: '6px', bgcolor: '#1a2744', width: '250px', '&:hover': { bgcolor: '#1976d2' } }}
           >
-            {saving ? 'Saving...' : 'Save'}
+            {saveForm.isPending ? 'Saving...' : 'Save'}
           </Button>
         </Box>
         {!name && (
