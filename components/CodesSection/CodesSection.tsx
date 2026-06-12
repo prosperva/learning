@@ -87,7 +87,7 @@ export default function CodesSection({ codes, onChange, validateUrl = '/api/mock
       });
       const data = await res.json();
       onChange(
-        codes.concat({ ...entry, status: data.valid ? 'valid' : 'invalid', message: data.message })
+        codes.concat({ ...entry, status: res.ok ? 'valid' : 'invalid', message: data.message })
       );
     } catch {
       onChange(
