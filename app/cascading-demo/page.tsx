@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Container,
   Paper,
@@ -58,6 +59,7 @@ export default function CascadingDemoPage() {
 
   const hasValidating = codes.some((c) => c.status === 'validating');
 
+  const router = useRouter();
   const saveForm = useSaveForm();
 
   function handleSave() {
@@ -72,7 +74,10 @@ export default function CascadingDemoPage() {
           .map((c) => ({ code: c.code, type: c.type, priority: c.priority })),
       },
       {
-        onSuccess: (data) => setToast({ message: `Saved! Reference: ${data.referenceNumber}`, severity: 'success' }),
+        onSuccess: (data) => {
+          setToast({ message: `Saved! Reference: ${data.referenceNumber}`, severity: 'success' });
+          router.push('/cascading-demo/list');
+        },
         onError: () => setToast({ message: 'Failed to save. Please try again.', severity: 'error' }),
       }
     );
