@@ -42,6 +42,7 @@ interface CodesSectionProps {
   codes: CodeEntry[];
   onChange: (codes: CodeEntry[]) => void;
   onValidate: (payload: ValidateCodePayload) => Promise<{ message?: string }>;
+  disabled?: boolean;
 }
 
 const CODE_REGEX = /^\d+(\.\d+)*( \(\d+\))?$/;
@@ -51,7 +52,7 @@ const CODE_PRIORITIES = ['High', 'Medium', 'Low', 'Critical'];
 
 const fieldSx = { '& .MuiOutlinedInput-root fieldset': { borderColor: '#1976d2' } };
 
-export default function CodesSection({ codes, onChange, onValidate }: CodesSectionProps) {
+export default function CodesSection({ codes, onChange, onValidate, disabled = false }: CodesSectionProps) {
   const [codeInput, setCodeInput] = useState('');
   const [codeType, setCodeType] = useState('');
   const [codePriority, setCodePriority] = useState('');
@@ -175,6 +176,7 @@ export default function CodesSection({ codes, onChange, onValidate }: CodesSecti
           onChange={(e) => setCodeType(e.target.value)}
           size="medium"
           fullWidth
+          disabled={disabled}
           slotProps={{ inputLabel: { shrink: true } }}
           sx={fieldSx}
         >
@@ -188,6 +190,7 @@ export default function CodesSection({ codes, onChange, onValidate }: CodesSecti
           onChange={(e) => setCodePriority(e.target.value)}
           size="medium"
           fullWidth
+          disabled={disabled}
           slotProps={{ inputLabel: { shrink: true } }}
           sx={fieldSx}
         >
@@ -208,6 +211,7 @@ export default function CodesSection({ codes, onChange, onValidate }: CodesSecti
           error={!!codeError}
           helperText={codeError || 'Press Enter or click Validate & Add'}
           size="medium"
+          disabled={disabled}
           sx={{ width: 300, ...fieldSx }}
           slotProps={{ inputLabel: { shrink: true } }}
         />
@@ -215,6 +219,7 @@ export default function CodesSection({ codes, onChange, onValidate }: CodesSecti
           variant="contained"
           onClick={handleAdd}
           size="large"
+          disabled={disabled}
           startIcon={<VerifiedIcon />}
           sx={{ height: '56px', textTransform: 'none', borderRadius: '6px', bgcolor: '#1a2744', '&:hover': { bgcolor: '#1976d2' } }}
         >

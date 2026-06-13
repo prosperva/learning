@@ -142,7 +142,7 @@ export default function CascadingDemoPage() {
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
           Enter codes in the format <strong>X.X.X.X</strong> or <strong>X.X.X.X (Y)</strong>. Each code will be validated before being added.
         </Typography>
-        <CodesSection codes={codes} onChange={setCodes} onValidate={(payload) => validateCode.mutateAsync(payload)} />
+        <CodesSection codes={codes} onChange={setCodes} onValidate={(payload) => validateCode.mutateAsync(payload)} disabled={saveForm.isPending} />
 
         <Divider sx={{ mt: 3, mb: 3 }} />
 
@@ -161,6 +161,7 @@ export default function CascadingDemoPage() {
             size="large"
             startIcon={<SearchOffIcon />}
             onClick={() => { setName(''); setDescription(''); setCategory(null); setCodes([]); saveForm.reset(); }}
+            disabled={saveForm.isPending}
             sx={{ textTransform: 'none', borderRadius: '6px', borderColor: '#90caf9', color: '#1976d2', bgcolor: '#fff', width: '250px', '&:hover': { borderColor: '#1976d2', bgcolor: '#f5f9ff' } }}
           >
             Reset
