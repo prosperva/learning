@@ -32,10 +32,16 @@ export interface CodeEntry {
   priority?: string;
 }
 
+export interface ValidateCodePayload {
+  code: string;
+  codeType?: string;
+  priority?: string;
+}
+
 interface CodesSectionProps {
   codes: CodeEntry[];
   onChange: (codes: CodeEntry[]) => void;
-  validateUrl?: string;
+  onValidate: (payload: ValidateCodePayload) => Promise<{ message?: string }>;
 }
 
 const CODE_REGEX = /^\d+(\.\d+)*( \(\d+\))?$/;
@@ -45,7 +51,7 @@ const CODE_PRIORITIES = ['High', 'Medium', 'Low', 'Critical'];
 
 const fieldSx = { '& .MuiOutlinedInput-root fieldset': { borderColor: '#1976d2' } };
 
-export default function CodesSection({ codes, onChange, validateUrl = '/api/mock/validate-code' }: CodesSectionProps) {
+export default function CodesSection({ codes, onChange, onValidate }: CodesSectionProps) {
   const [codeInput, setCodeInput] = useState('');
   const [codeType, setCodeType] = useState('');
   const [codePriority, setCodePriority] = useState('');
@@ -61,7 +67,7 @@ export default function CodesSection({ codes, onChange, validateUrl = '/api/mock
     return '';
   }
 
-  async function handleAdd() {
+  function handleAdd() {
     const trimmed = codeInput.trim();
     const err = validateFormat(trimmed);
     if (err) { setCodeError(err); return; }
@@ -79,21 +85,9 @@ export default function CodesSection({ codes, onChange, validateUrl = '/api/mock
     setCodeInput('');
     inputRef.current?.focus();
 
-    try {
-      const res = await fetch(validateUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: trimmed, codeType: codeType || undefined, priority: codePriority || undefined }),
-      });
-      const data = await res.json();
-      onChange(
-        codes.concat({ ...entry, status: res.ok ? 'valid' : 'invalid', message: data.message })
-      );
-    } catch {
-      onChange(
-        codes.concat({ ...entry, status: 'invalid', message: 'Validation request failed.' })
-      );
-    }
+    onValidate({ code: trimmed, codeType: codeType || undefined, priority: codePriority || undefined })
+      .then((data) => onChange(codes.concat({ ...entry, status: 'valid', message: data.message })))
+      .catch((err: Error) => onChange(codes.concat({ ...entry, status: 'invalid', message: err.message })));
   }
 
   function handleRemove(id: string) {

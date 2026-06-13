@@ -21,6 +21,7 @@ import {
 import CascadingDropdowns from '@/components/CascadingDropdowns/CascadingDropdowns';
 import CodesSection, { CodeEntry } from '@/components/CodesSection/CodesSection';
 import { useSaveForm } from '@/hooks/useSaveForm';
+import { useValidateCode } from '@/hooks/useValidateCode';
 
 interface Item {
   id: string | number;
@@ -61,6 +62,7 @@ export default function CascadingDemoPage() {
 
   const router = useRouter();
   const saveForm = useSaveForm();
+  const validateCode = useValidateCode('/api/mock/validate-code');
 
   function handleSave() {
     saveForm.mutate(
@@ -140,7 +142,7 @@ export default function CascadingDemoPage() {
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
           Enter codes in the format <strong>X.X.X.X</strong> or <strong>X.X.X.X (Y)</strong>. Each code will be validated before being added.
         </Typography>
-        <CodesSection codes={codes} onChange={setCodes} />
+        <CodesSection codes={codes} onChange={setCodes} onValidate={(payload) => validateCode.mutateAsync(payload)} />
 
         <Divider sx={{ mt: 3, mb: 3 }} />
 
