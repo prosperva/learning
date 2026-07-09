@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSubmissions, useDeleteSubmission } from '@/hooks/useSubmissions';
 import {
   Container,
   Paper,
@@ -26,38 +27,11 @@ import {
   Visibility as ViewIcon,
 } from '@mui/icons-material';
 
-interface Code {
-  id: string;
-  code: string;
-  status: string;
-}
-
-interface Submission {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  subCategory: string | null;
-  codes: Code[];
-  createdAt: string;
-  referenceNumber: string;
-  link?: string;
-}
-
 export default function SubmissionsListPage() {
   const router = useRouter();
-  const [rows, setRows] = useState<Submission[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch('/api/mock/submissions')
-      .then((r) => r.json())
-      .then(setRows)
-      .catch(() => setError('Failed to load submissions.'))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: rows = [], isLoading: loading, isError } = useSubmissions();
+  const deleteSubmission = useDeleteSubmission();
 
   return (
     <Container maxWidth={false} disableGutters sx={{ py: 4, px: 3, bgcolor: '#f5f5f5', minHeight: '100vh' }}>
@@ -75,7 +49,7 @@ export default function SubmissionsListPage() {
         </Button>
       </Box>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {isError && <Alert severity="error" sx={{ mb: 2 }}>Failed to load submissions.</Alert>}
 
       {loading ? (
         <Box display="flex" justifyContent="center" pt={8}>
@@ -245,7 +219,7 @@ export default function SubmissionsListPage() {
                     startIcon={<DeleteIcon />}
                     color="error"
                     onClick={() => {
-                      setRows((prev) => prev.filter((r) => r.id !== row.id));
+                      deleteSubmission.mutate(row.id);
                       setExpanded(null);
                     }}
                     sx={{ textTransform: 'none', borderRadius: '6px' }}
